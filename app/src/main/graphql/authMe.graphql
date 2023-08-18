@@ -1,0 +1,9 @@
+query AUTH_ME {
+    result: authMe {
+    id
+    authenticationUid
+    fullName
+    firstName
+    email
+    }
+}

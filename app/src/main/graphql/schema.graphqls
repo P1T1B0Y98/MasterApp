@@ -1,0 +1,1807 @@
+type Query {
+    assignmentsList("" filter: AssignmentsFilterInput, "" limit: Int, "" offset: Int, "" orderBy: AssignmentsOrderByEnum): AssignmentsPage!
+
+    assignmentsFind("" id: String!): Assignment!
+
+    assessmentsList("" filter: AssessmentsFilterInput, "" limit: Int, "" offset: Int, "" orderBy: AssessmentsOrderByEnum): AssessmentsPage!
+
+    assessmentsFind("" id: String!): Assessment!
+
+    assignmentsAutocomplete("" query: String, "" limit: Int): [AutocompleteOption!]!
+
+    iamListRoles("" filter: IamListRolesFilterInput, "" orderBy: RoleWithUsersOrderByEnum): [RoleWithUsers!]!
+
+    iamListUsers("" filter: IamListUsersFilterInput, "" limit: Int, "" offset: Int, "" orderBy: UserWithRolesOrderByEnum): UserWithRolesPage!
+
+    iamFind("" id: String!): UserWithRoles!
+
+    iamUserAutocomplete("" query: String, "" limit: Int): [AutocompleteOption!]!
+
+    authIsEmailConfigured: Boolean
+
+    authMe: UserWithRoles!
+
+    auditLogList("" filter: AuditLogListFilterInput, "" limit: Int, "" offset: Int, "" orderBy: AuditLogListOrderByEnum): AuditLogPage!
+
+    settingsFind: Settings!
+
+    patientFind("" id: String!): Patient!
+
+    patientList("" filter: PatientFilterInput, "" limit: Int, "" offset: Int, "" orderBy: PatientOrderByEnum): PatientPage!
+
+    patientAutocomplete("" query: String, "" limit: Int): [AutocompleteOption!]!
+
+    casedFind("" id: String!): Cased!
+
+    casedList("" filter: CasedFilterInput, "" limit: Int, "" offset: Int, "" orderBy: CasedOrderByEnum): CasedPage!
+
+    casedAutocomplete("" query: String, "" limit: Int): [AutocompleteOption!]!
+
+    moduleFind("" id: String!): Module!
+
+    moduleList("" filter: ModuleFilterInput, "" limit: Int, "" offset: Int, "" orderBy: ModuleOrderByEnum): ModulePage!
+
+    moduleAutocomplete("" query: String, "" limit: Int): [AutocompleteOption!]!
+
+    taskFind("" id: String!): Task!
+
+    taskList("" filter: TaskFilterInput, "" limit: Int, "" offset: Int, "" orderBy: TaskOrderByEnum): TaskPage!
+
+    taskAutocomplete("" query: String, "" limit: Int): [AutocompleteOption!]!
+
+    recordFind("" id: String!, "" options: RoadmapOption): Record!
+
+    recordList("" filter: RecordFilterInput, "" limit: Int, "" offset: Int, "" orderBy: RecordOrderByEnum): RecordPage!
+
+    recordAutocomplete("" query: String, "" limit: Int): [AutocompleteOption!]!
+
+    roadmapFind("" id: String!): Roadmap!
+
+    roadmapList("" filter: RoadmapFilterInput, "" limit: Int, "" offset: Int, "" orderBy: RoadmapOrderByEnum): RoadmapPage!
+
+    roadmapAutocomplete("" query: String, "" limit: Int): [AutocompleteOption!]!
+
+    epicFind("" id: String!): Epic!
+
+    epicList("" filter: EpicFilterInput, "" limit: Int, "" offset: Int, "" orderBy: EpicOrderByEnum): EpicPage!
+
+    epicAutocomplete("" query: String, "" limit: Int): [AutocompleteOption!]!
+
+    taxonomyFind("" id: String!): Taxonomy!
+
+    taxonomyList("" filter: TaxonomyFilterInput, "" limit: Int, "" offset: Int, "" orderBy: TaxonomyOrderByEnum): TaxonomyPage!
+
+    taxonomyAutocomplete("" query: String, "" limit: Int): [AutocompleteOption!]!
+
+    assignmentResponseList("" limit: Int, "" offset: Int, "" orderBy: AssignmentsOrderByEnum): assignmentResponsePage!
+}
+
+input AssessmentsFilterInput {
+
+    id: String
+
+    title: String
+
+    createdAtRange: [DateTime]
+}
+
+input AssignmentsFilterInput {
+    title: String
+
+    sub_title: String
+
+    createdAtRange: [DateTime]
+}
+
+"""
+The `String` scalar type represents textual data, represented as UTF-8 character sequences. The String type is most often used by GraphQL to represent free-form human-readable text.
+"""
+scalar String
+
+"""
+A date-time string at UTC, such as 2007-12-03T10:15:30Z, compliant with the `date-time` format outlined in section 5.6 of the RFC 3339 profile of the ISO 8601 standard for representation of dates and times using the Gregorian calendar.
+"""
+scalar DateTime
+
+"""
+The `Int` scalar type represents non-fractional signed whole numeric values. Int can represent values between -(2^31) and 2^31 - 1.
+"""
+scalar Int
+
+enum AssignmentsOrderByEnum {
+    id_ASC
+
+    id_DESC
+
+    title_ASC
+
+    title_DESC
+
+    sub_title_ASC
+
+    sub_title_DESC
+
+    createdAt_ASC
+
+    createdAt_DESC
+}
+
+type AssignmentsPage {
+    rows: [Assignment!]!
+
+    count: Int!
+}
+
+enum AssessmentsOrderByEnum {
+    id_ASC
+    id_DESC
+    title_ASC
+    title_DESC
+    sub_title_ASC
+    sub_title_DESC
+    createdAt_ASC
+    createdAt_DESC
+}
+
+type AssessmentsPage {
+    rows: [Assessment!]!
+    count: Int!
+}
+
+type Assessment {
+    id: String!
+    title: String!
+    frequency: String!
+    assessment_type: AssessmentTypeEnum
+    owner: [Task!]
+    assessmentSchema: [AssessmentSchema]
+    createdAt: DateTime
+    createdBy: User
+    updatedAt: DateTime
+}
+
+enum AssessmentTypeEnum {
+    stress
+    mental_health
+    physical_health
+}
+
+enum FrequencyTypeEnum {
+    none
+    daily
+    weekly
+    monthly
+    quarterly
+}
+
+input AssessmentInput {
+    title: String!
+    sub_title: String
+    assessment_type: AssessmentTypeEnum
+    formSchema: [FormSchemaInput]
+}
+type Assignment {
+    id: String!
+
+    title: String!
+
+    sub_title: String
+
+    assignment_type: AssignmentTypeEnum
+
+    owner: [Task!]
+
+    formSchema: [FormSchema]
+
+    createdAt: DateTime
+
+    createdBy: User
+
+    updatedAt: DateTime
+}
+
+enum AssignmentTypeEnum {
+    survey
+
+    quiz
+
+    psycometric_assessment
+}
+
+type Task {
+    id: String!
+
+    name: String
+
+    description: String
+
+    status: TaskStatusEnum
+
+    tags: String
+
+    points: Int
+
+    completionRequired: Boolean
+
+    complexityLevel: Int
+
+    owner: [Module!]
+
+    taxonomies: [Taxonomy!]
+
+    assignments: [Assignment]
+
+    elements: [Element]
+
+    documents: [Document]
+
+    audios: [Audio]
+
+    videos: [Video]
+
+    next: [Task]
+
+    createdAt: DateTime
+
+    updatedAt: DateTime
+}
+
+enum TaskStatusEnum {
+    ACTIVE
+
+    INACTIVE
+
+    DRAFT
+}
+
+"""
+The `Boolean` scalar type represents `true` or `false`.
+"""
+scalar Boolean
+
+type Module {
+    id: String!
+
+    owner: [Cased!]
+
+    name: String
+
+    description: String
+
+    status: ModuleStatusEnum
+
+    tasks: [Task!]
+
+    taxonomies: [Taxonomy!]
+
+    featuredImage: [File!]
+
+    prerequisite: [Module!]
+
+    createdAt: DateTime
+
+    updatedAt: DateTime
+}
+
+type Cased {
+    id: String!
+
+    name: String
+
+    description: String
+
+    status: CasedStatusEnum
+
+    featuredImage: [File!]
+
+    modules: [Module!]
+
+    taxonomies: [Taxonomy!]
+
+    patients: [Patient!]
+
+    audience: Audience
+
+    audienceList: [String]
+
+    availableFrom: String
+
+    createdAt: DateTime
+
+    updatedAt: DateTime
+}
+
+enum CasedStatusEnum {
+    ACTIVE
+
+    INACTIVE
+
+    DRAFT
+}
+
+type File {
+    id: String
+
+    name: String!
+
+    sizeInBytes: Int
+
+    privateUrl: String
+
+    publicUrl: String!
+}
+
+type Taxonomy {
+    id: String!
+
+    name: String!
+
+    parent: [Taxonomy!]
+
+    createdAt: DateTime
+
+    updatedAt: DateTime
+}
+
+type Patient {
+    id: String!
+
+    name: String
+
+    birthdate: String
+
+    gender: PatientGenderEnum
+
+    user: User
+
+    phone: String
+
+    createdAt: DateTime
+
+    updatedAt: DateTime
+
+    casedList("" filter: CasedFilterInput, "" limit: Int, "" offset: Int, "" orderBy: CasedOrderByEnum): CasedPage
+
+    recordList("" filter: RecordFilterInput, "" limit: Int, "" offset: Int, "" orderBy: RecordOrderByEnum): RecordPage!
+}
+
+enum PatientGenderEnum {
+    male
+
+    female
+}
+
+type User {
+    id: String!
+
+    fullName: String
+
+    firstName: String
+
+    lastName: String
+
+    phoneNumber: String
+
+    email: String!
+
+    avatars: [File!]
+
+    authenticationUid: String
+
+    emailVerified: Boolean
+
+    disabled: Boolean
+
+    createdAt: DateTime
+
+    updatedAt: DateTime
+
+    patient: Patient
+
+    patientId: String
+}
+
+input CasedFilterInput {
+    id: String
+
+    name: String
+
+    description: String
+
+    status: CasedStatusEnum
+
+    availableFromRange: [String]
+
+    createdAtRange: [DateTime]
+}
+
+enum CasedOrderByEnum {
+    id_ASC
+
+    id_DESC
+
+    name_ASC
+
+    name_DESC
+
+    description_ASC
+
+    description_DESC
+
+    status_ASC
+
+    status_DESC
+
+    availableFrom_ASC
+
+    availableFrom_DESC
+
+    createdAt_ASC
+
+    createdAt_DESC
+}
+
+type CasedPage {
+    rows: [Cased!]!
+
+    count: Int!
+}
+
+input RecordFilterInput {
+    id: String
+
+    createdAtRange: [DateTime]
+}
+
+enum RecordOrderByEnum {
+    id_ASC
+
+    id_DESC
+
+    createdAt_ASC
+
+    createdAt_DESC
+}
+
+type RecordPage {
+    rows: [Record!]!
+
+    count: Int!
+}
+
+type Record {
+    id: String!
+
+    host: Cased!
+
+    owner: User!
+
+    description: String
+
+    state: StateEnum!
+
+    status: StatusEnum
+
+    ownerId: String
+
+    roadmaps: [Roadmap!]
+
+    createdAt: DateTime
+
+    updatedAt: DateTime
+}
+
+enum StateEnum {
+    LOCKED
+
+    ACTIVATE
+
+    PROGRESS
+
+    COMPLETE
+}
+
+enum StatusEnum {
+    ACTIVE
+
+    INACTIVE
+
+    DRAFT
+}
+
+type Roadmap {
+    id: String!
+
+    host: Module!
+
+    record: Record!
+
+    state: StateEnum!
+
+    completionRequired: Boolean
+
+    children: [Epic!]
+
+    createdAt: DateTime
+
+    updatedAt: DateTime
+}
+
+type Epic {
+    id: String!
+
+    host: Task!
+
+    roadmap: Roadmap
+
+    state: StateEnum!
+
+    completionRequired: Boolean
+
+    children: [Epic]
+
+    elements: [EpicEvaluationCriteria]
+
+    createdAt: DateTime
+
+    updatedAt: DateTime
+}
+
+type EpicEvaluationCriteria {
+    id: ID
+
+    total: Int
+
+    done: Boolean
+
+    evaluation: Int
+
+    content: String
+
+    resourceType: String
+
+    operator: EvaluationCriteriaoperator
+}
+
+"""
+The `ID` scalar type represents a unique identifier, often used to refetch an object or as key for a cache. The ID type appears in a JSON response as a String; however, it is not intended to be human-readable. When expected as an input type, any string (such as `"4"`) or integer (such as `4`) input value will be accepted as an ID.
+"""
+scalar ID
+
+enum EvaluationCriteriaoperator {
+    EQUALS
+
+    LESSTHAN
+
+    GREATERTHAN
+}
+
+enum Audience {
+    ALL
+
+    USER
+}
+
+enum ModuleStatusEnum {
+    ACTIVE
+
+    INACTIVE
+
+    DRAFT
+}
+
+union Element = Document|Video|Audio
+
+type Document {
+    id: String!
+
+    evaluation: Int
+
+    contentHTML: String
+
+    createdAt: DateTime
+
+    updatedAt: DateTime
+}
+
+type Video {
+    id: String!
+
+    url: String
+
+    evaluation: Int
+
+    createdAt: DateTime
+
+    updatedAt: DateTime
+}
+
+type Audio {
+    id: String!
+
+    url: String
+
+    evaluation: Int
+
+    createdAt: DateTime
+
+    updatedAt: DateTime
+}
+
+type FormSchema {
+    type: QuestionEnum
+
+    placeholder: String
+
+    label: String!
+
+    field: String!
+
+    rules: [RuleType]
+
+    options: [OptionType]
+
+    formSchema: [RuleType]
+}
+
+type AssessmentSchema {
+    type: QuestionEnum
+
+    placeholder: String
+
+    field: String!
+
+    question: String!
+
+    frequency: String!
+
+    rules: [RuleType]
+
+    options: [OptionType]
+
+    assessmentSchema: [RuleType]
+}
+
+enum QuestionEnum {
+    input
+
+    textarea
+
+    radio
+
+    checkbox
+
+    select
+
+    date
+
+    time
+
+    confirm
+
+    smartwatch_data
+}
+
+type RuleType {
+    required: Boolean
+
+    message: String!
+}
+
+type OptionType {
+    field: String!
+
+    value: String!
+
+    label: String
+}
+
+type AutocompleteOption {
+    id: String!
+
+    label: String!
+}
+
+input IamListRolesFilterInput {
+    role: String
+}
+
+enum RoleWithUsersOrderByEnum {
+    role_ASC
+
+    role_DESC
+}
+
+type RoleWithUsers {
+    role: String!
+
+    users: [User!]!
+}
+
+input IamListUsersFilterInput {
+    id: String
+
+    fullName: String
+
+    email: String
+
+    role: String
+
+    status: String
+
+    createdAtRange: [DateTime]
+}
+
+enum UserWithRolesOrderByEnum {
+    email_ASC
+
+    email_DESC
+
+    fullName_ASC
+
+    fullName_DESC
+
+    disabled_ASC
+
+    disabled_DESC
+
+    createdAt_ASC
+
+    createdAt_DESC
+}
+
+type UserWithRolesPage {
+    rows: [UserWithRoles!]!
+
+    count: Int!
+}
+
+type UserWithRoles {
+    id: String!
+
+    fullName: String
+
+    firstName: String
+
+    lastName: String
+
+    phoneNumber: String
+
+    email: String!
+
+    avatars: [File!]
+
+    authenticationUid: String
+
+    emailVerified: Boolean
+
+    roles: [String!]!
+
+    disabled: Boolean
+
+    createdAt: DateTime
+
+    updatedAt: DateTime
+
+    patient: Patient
+
+    patientId: String
+}
+
+input AuditLogListFilterInput {
+    entityNames: [String!]
+
+    entityId: String
+
+    action: String
+
+    timestampRange: [DateTime]
+
+    createdByEmail: String
+}
+
+enum AuditLogListOrderByEnum {
+    createdByEmail_ASC
+
+    createdByEmail_DESC
+
+    entityName_ASC
+
+    entityName_DESC
+
+    entityId_ASC
+
+    entityId_DESC
+
+    action_ASC
+
+    action_DESC
+
+    timestamp_ASC
+
+    timestamp_DESC
+}
+
+type AuditLogPage {
+    rows: [AuditLog!]!
+
+    count: Int!
+}
+
+type AuditLog {
+    id: String!
+
+    entityName: String!
+
+    entityId: String!
+
+    action: String!
+
+    timestamp: DateTime!
+
+    createdBy: String
+
+    createdByEmail: String
+
+    values: JSON
+}
+
+scalar JSON
+
+type Settings {
+    theme: String!
+}
+
+input PatientFilterInput {
+    id: String
+
+    name: String
+
+    birthdateRange: [String]
+
+    gender: PatientGenderEnum
+
+    phone: String
+
+    createdAtRange: [DateTime]
+}
+
+enum PatientOrderByEnum {
+    id_ASC
+
+    id_DESC
+
+    name_ASC
+
+    name_DESC
+
+    birthdate_ASC
+
+    birthdate_DESC
+
+    gender_ASC
+
+    gender_DESC
+
+    phone_ASC
+
+    phone_DESC
+
+    createdAt_ASC
+
+    createdAt_DESC
+}
+
+type PatientPage {
+    rows: [Patient!]!
+
+    count: Int!
+}
+
+input ModuleFilterInput {
+    id: String
+
+    name: String
+
+    status: ModuleStatusEnum
+
+    createdAtRange: [DateTime]
+}
+
+enum ModuleOrderByEnum {
+    id_ASC
+
+    id_DESC
+
+    name_ASC
+
+    name_DESC
+
+    status_ASC
+
+    status_DESC
+
+    createdAt_ASC
+
+    createdAt_DESC
+}
+
+type ModulePage {
+    rows: [Module!]!
+
+    count: Int!
+}
+
+input TaskFilterInput {
+    id: String
+
+    name: String
+
+    description: String
+
+    status: TaskStatusEnum
+
+    tags: String
+
+    pointsRange: [Int]
+
+    completionRequired: Boolean
+
+    complexityLevelRange: [Int]
+
+    type: TaskTypeEnum
+
+    createdAtRange: [DateTime]
+}
+
+enum TaskTypeEnum {
+    AUDIO
+
+    VIDEO
+
+    TEXT
+
+    ASSESSMENT
+
+    FEEDBACK
+}
+
+enum TaskOrderByEnum {
+    id_ASC
+
+    id_DESC
+
+    name_ASC
+
+    name_DESC
+
+    description_ASC
+
+    description_DESC
+
+    status_ASC
+
+    status_DESC
+
+    tags_ASC
+
+    tags_DESC
+
+    points_ASC
+
+    points_DESC
+
+    completionRequired_ASC
+
+    completionRequired_DESC
+
+    complexityLevel_ASC
+
+    complexityLevel_DESC
+
+    type_ASC
+
+    type_DESC
+
+    createdAt_ASC
+
+    createdAt_DESC
+}
+
+type TaskPage {
+    rows: [Task!]!
+
+    count: Int!
+}
+
+input RoadmapOption {
+    task: String
+
+    module: String
+}
+
+input RoadmapFilterInput {
+    id: String
+
+    createdAtRange: [DateTime]
+}
+
+enum RoadmapOrderByEnum {
+    id_ASC
+
+    createdAt_ASC
+
+    createdAt_DESC
+}
+
+type RoadmapPage {
+    rows: [Roadmap!]!
+
+    count: Int!
+}
+
+input EpicFilterInput {
+    id: String
+
+    createdAtRange: [DateTime]
+}
+
+enum EpicOrderByEnum {
+    id_ASC
+
+    createdAt_ASC
+
+    createdAt_DESC
+}
+
+type EpicPage {
+    rows: [Epic!]!
+
+    count: Int!
+}
+
+input TaxonomyFilterInput {
+    id: String
+
+    name: String
+
+    parent: String
+
+    status: TaxonomyStatusEnum
+
+    createdAtRange: [DateTime]
+}
+
+enum TaxonomyStatusEnum {
+    ACTIVE
+
+    INACTIVE
+
+    DRAFT
+}
+
+enum TaxonomyOrderByEnum {
+    id_ASC
+
+    id_DESC
+
+    name_ASC
+
+    name_DES
+
+    parent_ASC
+
+    parent_DESC
+
+    status_ASC
+
+    status_DESC
+
+    createdAt_ASC
+
+    createdAt_DESC
+}
+
+type TaxonomyPage {
+    rows: [Taxonomy!]!
+
+    count: Int!
+}
+
+type assignmentResponsePage {
+    rows: [AssignmentResponse!]!
+
+    count: Int!
+}
+
+type AssignmentResponse {
+    id: String!
+
+    assignmentID: [Assignment!]
+
+    formData: JSON
+
+    createdAt: DateTime
+
+    createdBy: User
+}
+
+type Mutation {
+    iamEdit("" data: IamEditInput!): Boolean
+
+    iamImport("" data: IamImportInput!, "" importHash: String!): Boolean
+
+    iamCreate("" data: IamCreateInput!): Boolean
+
+    iamRemove("" emails: [String!]!, "" roles: [String!]!, "" all: Boolean): Boolean
+
+    iamChangeStatus("" ids: [String!]!, "" disabled: Boolean = false): Boolean
+
+    authSendPasswordResetEmail("" email: String!): Boolean
+
+    authSendEmailAddressVerificationEmail: Boolean
+
+    authUpdateProfile("" profile: UserProfileInput!): Boolean
+
+    authSignUp("" email: String!, "" password: String!): String
+
+    authSignIn("" email: String!, "" password: String!): String
+
+    authPasswordReset("" token: String!, "" password: String!): Boolean
+
+    authVerifyEmail("" token: String!): Boolean
+
+    settingsSave("" settings: SettingsInput!): Boolean
+
+    patientCreate("" data: PatientInput!): Patient!
+
+    patientDestroy("" ids: [String!]!): Boolean
+
+    patientUpdate("" id: String!, "" data: PatientInput!): Patient!
+
+    patientImport("" data: PatientInput!, "" importHash: String!): Boolean
+
+    casedCreate("" data: CasedInput!): Cased!
+
+    casedDestroy("" ids: [String!]!): Boolean
+
+    casedUpdate("" id: String!, "" data: CasedInput!): Cased!
+
+    casedImport("" data: CasedInput!, "" importHash: String!): Boolean
+
+    moduleCreate("" data: ModuleInput!): Module!
+
+    moduleDestroy("" ids: [String!]!): Boolean
+
+    moduleUpdate("" id: String!, "" data: ModuleInput!): Module!
+
+    moduleImport("" data: ModuleInput!, "" importHash: String!): Boolean
+
+    taskCreate("" data: TaskInput!): Task!
+
+    taskDestroy("" ids: [String!]!): Boolean
+
+    taskUpdate("" id: String!, "" data: TaskInput!): Task!
+
+    taskImport("" data: TaskInput!, "" importHash: String!): Boolean
+
+    recordCreate("" data: RecordInput!): Record!
+
+    recordDestroy("" ids: [String!]!): Boolean
+
+    recordUpdate("" id: String!, "" data: RecordInput!): Record!
+
+    recordImport("" data: RecordInput!, "" importHash: String!): Boolean
+
+    epicCriteriaUpdate("" id: String!, "" data: [EpicCriteriaInput]!): Epic!
+
+    assignmentUpdate("" id: String!, "" data: AssignmentInput!): Assignment!
+
+    assignmentCreate("" data: AssignmentInput!): Assignment!
+
+    assignmentsDestroy("" ids: [String!]!): Boolean
+
+    taxonomyCreate("" data: TaxonomyInput!): Taxonomy!
+
+    taxonomyDestroy("" ids: [String!]!): Boolean
+
+    taxonomyUpdate("" id: String!, "" data: TaxonomyInput!): Taxonomy!
+
+    taxonomyImport("" data: TaxonomyInput!, "" importHash: String!): Boolean
+
+    assignmentResponseCreate("" data: assignmentResponseInput!): AssignmentResponse!
+}
+
+input IamEditInput {
+    id: String!
+
+    firstName: String
+
+    lastName: String
+
+    phoneNumber: String
+
+    avatars: [FileInput!]
+
+    roles: [String!]!
+
+    patient: String
+}
+
+input FileInput {
+    id: String
+
+    name: String!
+
+    sizeInBytes: Int
+
+    privateUrl: String
+
+    publicUrl: String!
+
+    new: Boolean
+}
+
+input IamImportInput {
+    email: String!
+
+    firstName: String
+
+    lastName: String
+
+    phoneNumber: String
+
+    avatars: [FileInput!]
+
+    roles: [String!]!
+
+    patient: String
+}
+
+input IamCreateInput {
+    emails: [String!]!
+
+    firstName: String
+
+    lastName: String
+
+    phoneNumber: String
+
+    avatars: [FileInput!]
+
+    roles: [String!]!
+
+    patient: String
+}
+
+input UserProfileInput {
+    firstName: String
+
+    lastName: String
+
+    phoneNumber: String
+
+    patient: String
+
+    avatars: [FileInput!]
+}
+
+input SettingsInput {
+    theme: String!
+}
+
+input PatientInput {
+    name: String!
+
+    birthdate: String
+
+    gender: PatientGenderEnum
+
+    user: String
+
+    phone: String!
+}
+
+input CasedInput {
+    name: String!
+
+    description: String
+
+    status: CasedStatusEnum!
+
+    featuredImage: [FileInput!]
+
+    modules: [String!]
+
+    taxonomies: [String!]
+
+    patients: [String!]
+
+    audience: Audience
+
+    audienceList: [String]
+
+    availableFrom: String!
+}
+
+input ModuleInput {
+    owner: [String!]
+
+    name: String!
+
+    description: String
+
+    status: ModuleStatusEnum
+
+    tasks: [String!]
+
+    taxonomies: [String!]
+
+    featuredImage: [FileInput!]
+
+    prerequisite: [String!]
+}
+
+input TaskInput {
+    name: String!
+
+    description: String
+
+    status: TaskStatusEnum
+
+    tags: String
+
+    points: Int
+
+    completionRequired: Boolean
+
+    complexityLevel: Int
+
+    type: TaskTypeEnum
+
+    next: [String!]
+
+    owner: [String!]
+
+    taxonomies: [String!]
+
+    assignments: [String!]
+
+    audios: [AudioInput]
+
+    videos: [VideoInput]
+
+    documents: [DocumentInput]
+}
+
+input AudioInput {
+    id: String!
+
+    url: String!
+
+    evaluation: Int!
+
+    resourceType: AudioEnumType = Audio
+}
+
+enum AudioEnumType {
+    Audio
+}
+
+input VideoInput {
+    id: String!
+
+    url: String!
+
+    evaluation: Int!
+
+    resourceType: VideoEnumType = Video
+}
+
+enum VideoEnumType {
+    Video
+}
+
+input DocumentInput {
+    id: String!
+
+    evaluation: Int!
+
+    contentHTML: String!
+
+    resourceType: DocumentEnumType = Document
+}
+
+enum DocumentEnumType {
+    Document
+}
+
+input RecordInput {
+    host: String!
+
+    owner: String!
+
+    description: String
+}
+
+input EpicCriteriaInput {
+    id: String!
+
+    start: String!
+
+    duration: Int!
+}
+
+input AssignmentInput {
+    title: String!
+
+    sub_title: String
+
+    assignment_type: AssignmentTypeEnum
+
+    formSchema: [FormSchemaInput]
+}
+
+input FormSchemaInput {
+    type: QuestionEnum
+
+    placeholder: String
+
+    label: String!
+
+    field: String!
+
+    rules: [RuleInput]
+
+    options: [OptionTypeInput]
+
+    formSchema: [RuleInput]
+}
+
+input RuleInput {
+    required: Boolean!
+
+    message: String!
+}
+
+input OptionTypeInput {
+    field: String!
+
+    value: String!
+
+    label: String!
+}
+
+input TaxonomyInput {
+    name: String!
+
+    parent: [String!]
+}
+
+input assignmentResponseInput {
+    assignmentID: String
+
+    formData: JSON
+}
+
+"""
+A GraphQL Schema defines the capabilities of a GraphQL server. It exposes all available types and directives on the server, as well as the entry points for query, mutation, and subscription operations.
+"""
+type __Schema {
+    """
+    A list of all types supported by this server.
+    """
+    types: [__Type!]!
+
+    """
+    The type that query operations will be rooted at.
+    """
+    queryType: __Type!
+
+    """
+    If this server supports mutation, the type that mutation operations will be rooted at.
+    """
+    mutationType: __Type
+
+    """
+    If this server support subscription, the type that subscription operations will be rooted at.
+    """
+    subscriptionType: __Type
+
+    """
+    A list of all directives supported by this server.
+    """
+    directives: [__Directive!]!
+}
+
+"""
+The fundamental unit of any GraphQL Schema is the type. There are many kinds of types in GraphQL as represented by the `__TypeKind` enum.
+
+Depending on the kind of a type, certain fields describe information about that type. Scalar types provide no information beyond a name and description, while Enum types provide their values. Object and Interface types provide the fields they describe. Abstract types, Union and Interface, provide the Object types possible at runtime. List and NonNull types compose other types.
+"""
+type __Type {
+    kind: __TypeKind!
+
+    name: String
+
+    description: String
+
+    fields(includeDeprecated: Boolean = false): [__Field!]
+
+    interfaces: [__Type!]
+
+    possibleTypes: [__Type!]
+
+    enumValues(includeDeprecated: Boolean = false): [__EnumValue!]
+
+    inputFields: [__InputValue!]
+
+    ofType: __Type
+}
+
+"""
+An enum describing what kind of type a given `__Type` is.
+"""
+enum __TypeKind {
+    """
+    Indicates this type is a scalar.
+    """
+    SCALAR
+
+    """
+    Indicates this type is an object. `fields` and `interfaces` are valid fields.
+    """
+    OBJECT
+
+    """
+    Indicates this type is an interface. `fields` and `possibleTypes` are valid fields.
+    """
+    INTERFACE
+
+    """
+    Indicates this type is a union. `possibleTypes` is a valid field.
+    """
+    UNION
+
+    """
+    Indicates this type is an enum. `enumValues` is a valid field.
+    """
+    ENUM
+
+    """
+    Indicates this type is an input object. `inputFields` is a valid field.
+    """
+    INPUT_OBJECT
+
+    """
+    Indicates this type is a list. `ofType` is a valid field.
+    """
+    LIST
+
+    """
+    Indicates this type is a non-null. `ofType` is a valid field.
+    """
+    NON_NULL
+}
+
+"""
+Object and Interface types are described by a list of Fields, each of which has a name, potentially a list of arguments, and a return type.
+"""
+type __Field {
+    name: String!
+
+    description: String
+
+    args: [__InputValue!]!
+
+    type: __Type!
+
+    isDeprecated: Boolean!
+
+    deprecationReason: String
+}
+
+"""
+Arguments provided to Fields or Directives and the input fields of an InputObject are represented as Input Values which describe their type and optionally a default value.
+"""
+type __InputValue {
+    name: String!
+
+    description: String
+
+    type: __Type!
+
+    """
+    A GraphQL-formatted string representing the default value for this input value.
+    """
+    defaultValue: String
+}
+
+"""
+One possible value for a given Enum. Enum values are unique values, not a placeholder for a string or numeric value. However an Enum value is returned in a JSON response as a string.
+"""
+type __EnumValue {
+    name: String!
+
+    description: String
+
+    isDeprecated: Boolean!
+
+    deprecationReason: String
+}
+
+"""
+A Directive provides a way to describe alternate runtime execution and type validation behavior in a GraphQL document.
+
+In some cases, you need to provide options to alter GraphQL's execution behavior in ways field arguments will not suffice, such as conditionally including or skipping a field. Directives provide this by describing additional information to the executor.
+"""
+type __Directive {
+    name: String!
+
+    description: String
+
+    locations: [__DirectiveLocation!]!
+
+    args: [__InputValue!]!
+}
+
+"""
+A Directive can be adjacent to many parts of the GraphQL language, a __DirectiveLocation describes one such possible adjacencies.
+"""
+enum __DirectiveLocation {
+    """
+    Location adjacent to a query operation.
+    """
+    QUERY
+
+    """
+    Location adjacent to a mutation operation.
+    """
+    MUTATION
+
+    """
+    Location adjacent to a subscription operation.
+    """
+    SUBSCRIPTION
+
+    """
+    Location adjacent to a field.
+    """
+    FIELD
+
+    """
+    Location adjacent to a fragment definition.
+    """
+    FRAGMENT_DEFINITION
+
+    """
+    Location adjacent to a fragment spread.
+    """
+    FRAGMENT_SPREAD
+
+    """
+    Location adjacent to an inline fragment.
+    """
+    INLINE_FRAGMENT
+
+    """
+    Location adjacent to a variable definition.
+    """
+    VARIABLE_DEFINITION
+
+    """
+    Location adjacent to a schema definition.
+    """
+    SCHEMA
+
+    """
+    Location adjacent to a scalar definition.
+    """
+    SCALAR
+
+    """
+    Location adjacent to an object type definition.
+    """
+    OBJECT
+
+    """
+    Location adjacent to a field definition.
+    """
+    FIELD_DEFINITION
+
+    """
+    Location adjacent to an argument definition.
+    """
+    ARGUMENT_DEFINITION
+
+    """
+    Location adjacent to an interface definition.
+    """
+    INTERFACE
+
+    """
+    Location adjacent to a union definition.
+    """
+    UNION
+
+    """
+    Location adjacent to an enum definition.
+    """
+    ENUM
+
+    """
+    Location adjacent to an enum value definition.
+    """
+    ENUM_VALUE
+
+    """
+    Location adjacent to an input object type definition.
+    """
+    INPUT_OBJECT
+
+    """
+    Location adjacent to an input object field definition.
+    """
+    INPUT_FIELD_DEFINITION
+}
+
+type Schema {
+    query: Query
+
+    mutation: Mutation
+}
+
+"""
+A time string at UTC, such as 10:15:30Z, compliant with the `full-time` format outlined in section 5.6 of the RFC 3339profile of the ISO 8601 standard for representation of dates and times using the Gregorian calendar.
+"""
+scalar Time
+
+enum OperatoreEnum {
+    GREATERTHAN
+
+    LESSTHAN
+
+    EQUALS
+}
+
+input EvaluationCriteriaInput {
+    field: String!
+
+    valueRequired: String!
+
+    operator: EvaluationCriteriaoperator!
+}
+
+type EvaluationCriteria {
+    id: String
+
+    field: String
+
+    done: Boolean
+
+    total: Int
+
+    valueRequired: String
+
+    operator: EvaluationCriteriaoperator
+}
+
+"""
+Directs the executor to skip this field or fragment when the `if` argument is true.
+"""
+directive @skip ("Skipped when true." if: Boolean!) on FIELD|FRAGMENT_SPREAD|INLINE_FRAGMENT
+
+"""
+Directs the executor to include this field or fragment only when the `if` argument is true.
+"""
+directive @include ("Included when true." if: Boolean!) on FIELD|FRAGMENT_SPREAD|INLINE_FRAGMENT
+
+"""
+Marks an element of a GraphQL schema as no longer supported.
+"""
+directive @deprecated ("Explains why this element was deprecated, usually also including a suggestion for how to access supported similar data. Formatted using the Markdown syntax (as specified by [CommonMark](https:\/\/commonmark.org\/)." reason: String = "No longer supported") on FIELD_DEFINITION|ENUM_VALUE
+
+schema {
+    query: Query
+    mutation: Mutation
+}

@@ -1,0 +1,29 @@
+query ASSESSMENTS_FIND($id: String!) {
+    assessmentsFind(id: $id) {
+        id
+        title
+        assessment_type
+        frequency
+        assessmentSchema {
+            type
+            question
+            field
+            options {
+                field
+                value
+                label
+            }
+            placeholder
+            rules {
+                required
+                message
+            }
+            assessmentSchema {
+                required
+                message
+            }
+        }
+        createdAt
+        updatedAt
+    }
+}

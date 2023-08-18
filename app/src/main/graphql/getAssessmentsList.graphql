@@ -1,0 +1,31 @@
+query GET_ASSESSMENTS_LIST(
+    $filter: AssessmentsFilterInput,
+    $limit: Int,
+    $offset: Int,
+    $orderBy: AssessmentsOrderByEnum
+) {
+    assessmentsList(
+        filter: $filter,
+        limit: $limit,
+        offset: $offset,
+        orderBy: $orderBy
+    ) {
+        rows {
+            id
+            title
+            assessment_type
+            frequency
+            assessmentSchema {
+                type
+                question
+                field
+                options {
+                    field
+                    label
+                    value
+                }
+            }
+        }
+        count
+    }
+}

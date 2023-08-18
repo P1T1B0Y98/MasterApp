@@ -1,0 +1,3 @@
+mutation AUTH_SIGN_IN($email: String!, $password: String!) {
+    result: authSignIn(email: $email, password: $password)
+}
