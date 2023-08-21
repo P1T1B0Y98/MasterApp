@@ -30,6 +30,7 @@ import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
 import androidx.health.connect.client.units.Mass
 import androidx.health.connect.client.units.Velocity
+import java.time.Duration
 import java.time.Instant
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
@@ -147,7 +148,7 @@ class HealthConnectManager(val context: Context) {
     }
 
 
-    suspend fun readSleepRecords() {
+    suspend fun readSleepRecords(): List<SleepSessionData> {
         Log.i("Sleep Records", "Reading sleep records")
         val response =
             healthConnectClient.readRecords(ReadRecordsRequest(
@@ -158,8 +159,11 @@ class HealthConnectManager(val context: Context) {
                 )
             ))
 
+        val sleepSessionDataList = mutableListOf<SleepSessionData>()
+
         for (sleepRecord in response.records) {
             Log.i("Sleep Record", sleepRecord.toString())
+
             val sleepStageRecords = healthConnectClient
                 .readRecords(
                     ReadRecordsRequest(
@@ -171,30 +175,71 @@ class HealthConnectManager(val context: Context) {
                     )
                 )
                 .records
+
+            val sleepSessionData = SleepSessionData(
+                uid = sleepRecord.metadata.id,
+                title = sleepRecord.title,
+                notes = sleepRecord.notes,
+                startTime = sleepRecord.startTime,
+                startZoneOffset = sleepRecord.startZoneOffset,
+                endTime = sleepRecord.endTime,
+                endZoneOffset = sleepRecord.endZoneOffset,
+                duration = Duration.between(sleepRecord.startTime, sleepRecord.endTime),
+                stages = sleepStageRecords
+            )
+
+            sleepSessionDataList.add(sleepSessionData)
+
             for (stageRecord in sleepStageRecords) {
                 Log.i("Sleep Stage Record", stageRecord.toString())
             }
         }
 
+        return sleepSessionDataList
     }
 
-    suspend fun readHeartRateVariabilityRecord(start: Instant, end: Instant): List<HeartRateVariabilityRmssdRecord> {
+
+    suspend fun readHeartRateVariabilityRecord(start: Instant, end: Instant): List<HeartRateVariabilityData> {
         val request = ReadRecordsRequest(
             recordType = HeartRateVariabilityRmssdRecord::class,
             timeRangeFilter = TimeRangeFilter.between(start, end)
         )
         val response = healthConnectClient.readRecords(request)
-        return response.records
+
+        return response.records.map { record ->
+            HeartRateVariabilityData(
+                heartRateVariability = record.heartRateVariabilityMillis,
+                id = record.metadata.id,
+                time = record.time,
+                sourceAppInfo = healthConnectCompatibleApps[record.metadata.dataOrigin.packageName]
+            )
+        }
     }
 
-    suspend fun readHeartRateRecord(start: Instant, end: Instant): List<HeartRateRecord> {
+
+    suspend fun readHeartRateRecord(start: Instant, end: Instant): List<HeartRateData> {
         val request = ReadRecordsRequest(
             recordType = HeartRateRecord::class,
             timeRangeFilter = TimeRangeFilter.between(start, end)
         )
         val response = healthConnectClient.readRecords(request)
-        return response.records
+
+        return response.records.map { record ->
+            HeartRateData(
+                id = record.metadata.id,
+                startTime = record.startTime,
+                endTime = record.endTime,
+                samples = record.samples.map { sample ->
+                    HeartRateDataSample(
+                        beatsPerMinute = sample.beatsPerMinute,
+                        time = sample.time
+                    )
+                },
+                sourceAppInfo = healthConnectCompatibleApps[record.metadata.dataOrigin.packageName]
+            )
+        }
     }
+
 
     suspend fun readExerciseSessions(start: Instant, end: Instant): List<ExerciseSessionRecord> {
         val request = ReadRecordsRequest(

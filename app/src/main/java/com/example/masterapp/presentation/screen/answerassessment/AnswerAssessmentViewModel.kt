@@ -7,12 +7,15 @@ import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.HeartRateRecord
 import androidx.health.connect.client.records.HeartRateVariabilityRmssdRecord
 import androidx.lifecycle.ViewModel
+import com.example.masterapp.data.AnswerData
 import com.example.masterapp.data.Assessment
+import com.example.masterapp.data.DynamicAnswerData
 import com.example.masterapp.data.ExerciseSession
 import com.example.masterapp.data.HealthConnectManager
 import com.example.masterapp.data.HeartRateData
 import com.example.masterapp.data.HeartRateDataSample
 import com.example.masterapp.data.HeartRateVariabilityData
+import com.example.masterapp.data.SleepSessionData
 import com.example.masterapp.data.dateTimeWithOffsetOrDefault
 import com.example.masterapp.data.roomDatabase.Answer
 import com.example.masterapp.data.roomDatabase.AnswerViewModel
@@ -70,7 +73,7 @@ class AnswerAssessmentViewModel(
         }
     }
 
-    suspend fun collectAndSendSmartwatchData(): List<String>
+    suspend fun collectAndSendSmartwatchData(): List<List<Any>>
     {
         val hrvData = readHRVdata()
         val heartRateData = readHeartRateData()
@@ -86,12 +89,12 @@ class AnswerAssessmentViewModel(
 
     }
 
-    suspend fun readSleepData() {
-        healthConnectManager.readSleepRecords()
+    suspend fun readSleepData(): List<SleepSessionData> {
 
+        return healthConnectManager.readSleepRecords()
     }
 
-    suspend fun readExerciseSessionsData() {
+    suspend fun readExerciseSessionsData(): List<ExerciseSession> {
         val startOfDay = ZonedDateTime.now().truncatedTo(ChronoUnit.DAYS)
         val now = Instant.now()
 
@@ -111,82 +114,24 @@ class AnswerAssessmentViewModel(
         sessionsList.value?.forEach { session ->
             Log.i("Exercise Session", session.toString())
         }
+
+        return sessionsList.value
     }
 
-    suspend fun readHRVdata(): String {
+    private suspend fun readHRVdata(): List<HeartRateVariabilityData> {
         // Read HRV data from the device
-        val startOfDay = ZonedDateTime.now().truncatedTo(ChronoUnit.DAYS)
-        val now = Instant.now()
-        val endofWeek = startOfDay.toInstant().plus(7, ChronoUnit.DAYS)
-        permissionsGranted.value = healthConnectManager.hasAllPermissions(permissions)
-        Log.i("HealthConnect", "Permissions granted: ${permissionsGranted.value}")
-        val hrvStringBuilder = StringBuilder()
-
-        if (permissionsGranted.value) {
-            val heartRateVariabilityList = healthConnectManager
-                .readHeartRateVariabilityRecord(startOfDay.toInstant(), now)
-                .map { record ->
-                    val packageName = record.metadata.dataOrigin.packageName
-                    HeartRateVariabilityData(
-                        heartRateVariability = record.heartRateVariabilityMillis,
-                        id = record.metadata.id,
-                        time = dateTimeWithOffsetOrDefault(record.time, record.zoneOffset),
-                        sourceAppInfo = healthConnectCompatibleApps[packageName]
-                    )
-                }
-
-            // Build the string
-            heartRateVariabilityList.forEachIndexed { index, hrvRecord ->
-                hrvStringBuilder.append(
-                    "HRV Record $index: Heart Rate Variability = ${hrvRecord.heartRateVariability}, " +
-                            "ID = ${hrvRecord.id}, Time = ${hrvRecord.time}, " +
-                            "Source App Info = ${hrvRecord.sourceAppInfo}\n"
-                )
-            }
-        } else {
-            Log.i("HealthConnect", "Permissions not granted")
-        }
-
-        return hrvStringBuilder.toString()
+        val start = Instant.now().minus(7, ChronoUnit.DAYS)
+        val end = Instant.now()
+        return healthConnectManager.readHeartRateVariabilityRecord(start, end)
     }
 
-    suspend fun readHeartRateData(): String {
+    private suspend fun readHeartRateData(): List<HeartRateData> {
         // Read heart rate data from the device
-        val startOfDay = ZonedDateTime.now().truncatedTo(ChronoUnit.DAYS)
+        val start = Instant.now().minus(7, ChronoUnit.DAYS)
         val now = Instant.now()
-        val endofWeek = startOfDay.toInstant().plus(7, ChronoUnit.DAYS)
-        permissionsGranted.value = healthConnectManager.hasAllPermissions(permissions)
-        Log.i("HealthConnect", "Permissions granted: ${permissionsGranted.value}")
-        val heartRateStringBuilder = StringBuilder()
 
-        if (permissionsGranted.value) {
 
-            val heartRateList = healthConnectManager
-                .readHeartRateRecord(startOfDay.toInstant(), now)
-                .map { record ->
-                    val packageName = record.metadata.dataOrigin.packageName
-                    HeartRateData(
-                        id = record.metadata.id,
-                        startTime = record.startTime,
-                        endTime = record.endTime,
-                        samples = convertToHeartRateDataSample(record.samples),
-                        sourceAppInfo = healthConnectCompatibleApps[packageName]
-                    )
-                }
-
-            // Build the string
-            heartRateList.forEachIndexed { index, heartRateRecord ->
-                heartRateStringBuilder.append(
-                    "Heart rate Record $index: samples = ${heartRateRecord.samples}, " +
-                            "ID = ${heartRateRecord.id}, Time = ${heartRateRecord.startTime}, " +
-                            "Source App Info = ${heartRateRecord.sourceAppInfo}\n"
-                )
-            }
-        } else {
-            Log.i("HealthConnect", "Permissions not granted")
-        }
-
-        return heartRateStringBuilder.toString()
+        return healthConnectManager.readHeartRateRecord(start, now)
     }
 
 // Assuming you have the HeartRateRecord.Sample class
@@ -207,12 +152,30 @@ class AnswerAssessmentViewModel(
         assessmentTitle: String,
         assessmentType: String,
         timestamp: String,
-        answerMap: Map<Int, List<String>>,
+        answerMap: Map<Int, List<AnswerData>>,
 
     ) {
+
         val questionAnswers = answerMap.map { (questionIndex, answers) ->
-            QuestionAnswer(questionIndex, answers.joinToString(", "))
+            val dynamicAnswers = answers.map { answerData ->
+                when (answerData) {
+                    is AnswerData.Textual -> DynamicAnswerData("Textual", answerData.values.joinToString(", "))
+                    is AnswerData.Stress -> DynamicAnswerData("Stress", answerData.values.joinToString(", "))
+                    is AnswerData.Sleep -> DynamicAnswerData("Sleep", answerData.data)
+                    is AnswerData.Exercise -> DynamicAnswerData("Exercise", answerData.data)
+
+                    else -> null
+                }
+            }.filterNotNull()
+
+            Log.i("AnswerAssessmentViewModel", "Dynamic answers for question $questionIndex: $dynamicAnswers")
+
+            QuestionAnswer(
+                questionId = questionIndex,
+                answers = dynamicAnswers
+            )
         }
+
 
         val answer = Answer(
             userId = userId,

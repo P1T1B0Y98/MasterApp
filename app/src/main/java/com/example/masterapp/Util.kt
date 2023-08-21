@@ -1,7 +1,13 @@
 package com.example.masterapp
 
+import android.app.Activity
+import android.view.inputmethod.InputMethodManager
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.forEachGesture
 import androidx.compose.material.ScaffoldState
 import androidx.compose.material.SnackbarDuration
+import androidx.core.content.ContextCompat
 import com.example.masterapp.data.dateTimeWithOffsetOrDefault
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -37,3 +43,11 @@ fun formatDisplayTimeStartEnd(
     val end = timeFormatter.format(dateTimeWithOffsetOrDefault(endTime, endZoneOffset))
     return "$start - $end"
 }
+
+fun Activity.hideSoftKeyboard() {
+    currentFocus?.let {
+        val inputMethodManager = ContextCompat.getSystemService(this, InputMethodManager::class.java)!!
+        inputMethodManager.hideSoftInputFromWindow(it.windowToken, 0)
+    }
+}
+
