@@ -4,6 +4,12 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.TypeConverters
+import com.example.masterapp.data.AnswerData
+import com.example.masterapp.data.DynamicAnswerData
+import com.example.masterapp.data.ExerciseSession
+import com.example.masterapp.data.HeartRateData
+import com.example.masterapp.data.HeartRateVariabilityData
+import com.example.masterapp.data.SleepSessionData
 
 @Entity(tableName = "answers")
 data class Answer(
@@ -19,5 +25,6 @@ data class Answer(
 
 data class QuestionAnswer(
     val questionId: Int,
-    val answerText: String
+    val answers: List<DynamicAnswerData>               // hrv answer
 )
+

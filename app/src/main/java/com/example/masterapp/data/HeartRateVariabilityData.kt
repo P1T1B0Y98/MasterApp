@@ -1,5 +1,5 @@
 package com.example.masterapp.data
-import java.time.ZonedDateTime
+import java.time.Instant
 
 /**
  * Represents a weight record and associated data.
@@ -7,6 +7,6 @@ import java.time.ZonedDateTime
 data class HeartRateVariabilityData(
     val heartRateVariability: Double,
     val id: String,
-    val time: ZonedDateTime,
+    val time: Instant,
     val sourceAppInfo: MasterAppInfo?
 )
