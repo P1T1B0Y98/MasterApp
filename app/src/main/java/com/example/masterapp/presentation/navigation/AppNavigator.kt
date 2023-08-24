@@ -98,7 +98,10 @@ fun AppNavigator(
                 navigateToWelcomeScreen(navController)
             }, onRegister = {
                 navigateToRegisterScreen(navController)
-            })
+            },
+                onAboutUs = {
+                    navController.navigate(Screen.AboutScreen.route)
+                })
         }
 
         composable(Screen.RegisterScreen.route) {

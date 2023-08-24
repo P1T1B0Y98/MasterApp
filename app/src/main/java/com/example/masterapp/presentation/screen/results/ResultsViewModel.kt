@@ -52,7 +52,12 @@ class ResultsViewModel(
     }
 
     fun onAnswerSelected(answer:  Answer) {
+        Log.i("ResultsViewModel", "Setting detailed state for answer: ${answer.assessmentTitle}")
         _uiState.value = ResultsUiState.Detailed(answer)
+    }
+
+    fun goBack() {
+        _uiState.value = ResultsUiState.Success(answerViewModel.answersByUser.value!!)
     }
     // Implement other logic and functions as needed
 }

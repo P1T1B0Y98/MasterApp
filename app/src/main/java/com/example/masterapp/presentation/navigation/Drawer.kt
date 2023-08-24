@@ -85,7 +85,7 @@ fun Drawer(
                                     scaffoldState.drawerState.close()
                                 }
                             },
-                        painter = painterResource(id = R.drawable.stress_management),
+                        painter = painterResource(id = R.mipmap.ic_launcher_foreground_dup),
                         contentDescription = stringResource(id = R.string.app_name)
                     )
                 }

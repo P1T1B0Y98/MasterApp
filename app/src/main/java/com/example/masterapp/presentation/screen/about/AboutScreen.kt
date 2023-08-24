@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -33,8 +34,8 @@ fun AboutScreen() {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Image(
-            modifier = Modifier.fillMaxWidth(0.5f),
-            painter = painterResource(id = R.drawable.stress_management),
+            painter = painterResource(id = R.mipmap.ic_launcher_foreground_dup),
+            modifier = Modifier.size(100.dp),
             contentDescription = stringResource(id = R.string.health_connect_logo)
         )
         Spacer(modifier = Modifier.height(32.dp))

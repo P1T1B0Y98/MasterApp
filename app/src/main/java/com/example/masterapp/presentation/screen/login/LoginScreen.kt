@@ -32,7 +32,10 @@ import com.example.masterapp.presentation.theme.Lavender
 import kotlinx.coroutines.launch
 
 @Composable
-fun LoginScreen(viewModel: LoginViewModel, onLoginSuccess: () -> Unit, onRegister: () -> Unit) {
+fun LoginScreen(viewModel: LoginViewModel,
+                onLoginSuccess: () -> Unit,
+                onRegister: () -> Unit,
+                onAboutUs: () -> Unit) {
     val emailState = remember { mutableStateOf("petter@petter.no") }
     val passwordState = remember { mutableStateOf("wilshere") }
 
@@ -42,25 +45,26 @@ fun LoginScreen(viewModel: LoginViewModel, onLoginSuccess: () -> Unit, onRegiste
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 16.dp)
-            .padding(top = 64.dp), // Ad
+            .padding(top = 64.dp),
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-
+        // Add the App Logo
         Image(
-            painter = painterResource(id = R.drawable.stress_management),
+            painter = painterResource(id = R.mipmap.ic_launcher_foreground_dup),
             contentDescription = null,
-            modifier = Modifier.size(100.dp)
+            modifier = Modifier.size(150.dp)
         )
         // Add the App Name and Slogan
         Text(
-            text = "HealthPulse",
+            text = "MindSync",
             style = MaterialTheme.typography.h4,
+            fontWeight = FontWeight.Bold,
             color = Color(0xFF86C6E5),
             modifier = Modifier.padding(bottom = 5.dp)
         )
         Text(
-            text = "Empowering Minds, Healing Hearts",
+            text = "Syncing Mind & Metrics",
             style = MaterialTheme.typography.subtitle1,
             color = Color(0xFF86C6E5),
             modifier = Modifier.padding(bottom = 32.dp)
@@ -126,6 +130,23 @@ fun LoginScreen(viewModel: LoginViewModel, onLoginSuccess: () -> Unit, onRegiste
             onClick = {
                 // Navigate to the registration screen
                 onRegister()
+            },
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally)
+                .padding(top = 8.dp)
+        )
+
+        ClickableText(
+            text = AnnotatedString("About us"),
+            style = TextStyle(
+                color = Lavender, // Customize the link text color here
+                textDecoration = TextDecoration.Underline,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold // Optional, you can adjust the font weight
+            ),
+            onClick = {
+                // Navigate to the registration screen
+                onAboutUs()
             },
             modifier = Modifier
                 .align(Alignment.CenterHorizontally)

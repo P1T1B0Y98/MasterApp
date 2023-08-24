@@ -108,7 +108,7 @@ fun SetupScreen(
                     )
 
                     Image(
-                        painter = painterResource(id = R.drawable.stress_management),
+                        painter = painterResource(id = R.mipmap.ic_launcher_foreground_dup),
                         contentDescription = null,
                         modifier = Modifier.size(100.dp)
                     )
@@ -172,7 +172,7 @@ fun SetupScreen(
                     )
 
                     Image(
-                        painter = painterResource(id = R.drawable.stress_management),
+                        painter = painterResource(id = R.mipmap.ic_launcher_foreground_dup),
                         contentDescription = null,
                         modifier = Modifier.size(100.dp)
                     )
