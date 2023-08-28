@@ -7,14 +7,14 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 
 @Database(
-    entities = [Answer::class],
-    version = 2,
+    entities = [Answer::class, QuestionnaireReminder::class], // Added QuestionnaireStatus::class
+    version = 3,
     exportSchema = false
 )
 @TypeConverters(QuestionAnswerConverter::class)
-
 abstract class AnswerDatabase : RoomDatabase() {
     abstract val answerDao: AnswerDao
+    abstract val questionnaireReminderDao: QuestionnaireReminderDao // Added this DAO reference
 
     companion object {
         @Volatile

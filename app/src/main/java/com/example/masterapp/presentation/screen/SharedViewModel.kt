@@ -32,4 +32,6 @@ class SharedViewModel(
     fun getUserProfile(): UserProfile? {
         return AuthManager.getUserProfile()
     }
+
+
 }

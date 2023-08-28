@@ -12,14 +12,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navDeepLink
+import com.example.masterapp.NotificationSettingsManager
 import com.example.masterapp.data.HealthConnectManager
 import com.example.masterapp.data.roomDatabase.AnswerViewModel
 import com.example.masterapp.data.roomDatabase.AnswerViewModelFactory
+import com.example.masterapp.data.roomDatabase.QuestionnaireReminderViewModel
+import com.example.masterapp.data.roomDatabase.QuestionnaireReminderViewModelFactory
+import com.example.masterapp.data.roomDatabase.QuestionnaireRepository
 import com.example.masterapp.presentation.BaseApplication
 import com.example.masterapp.presentation.screen.PrivacyPolicyScreen
 import com.example.masterapp.presentation.screen.SharedViewModel
@@ -57,7 +62,8 @@ fun AppNavigator(
     navController: NavHostController,
     healthConnectManager: HealthConnectManager,
     scaffoldState: ScaffoldState,
-    authManager: AuthManager
+    authManager: AuthManager,
+    notificationSettingsManager: NotificationSettingsManager,
 ) {
     Log.i("AppNavigator", "AppNavigator")
     Log.i("HealthConnectManagerPackage", healthConnectManager.context.packageManager.toString())
@@ -69,9 +75,14 @@ fun AppNavigator(
     val myHealthConnectManager = app.healthConnectManager
     val answerViewModelFactory = AnswerViewModelFactory(app.answerDatabase.answerDao)
     val answerViewModel: AnswerViewModel = viewModel(factory = answerViewModelFactory)
+    val dao = app.answerDatabase.questionnaireReminderDao/* initialize or retrieve your DAO here */
+    val repository = QuestionnaireRepository(dao)
+    val viewModelFactory = QuestionnaireReminderViewModelFactory(repository)
+    val questionnaireReminderViewModel: QuestionnaireReminderViewModel = viewModel(factory = viewModelFactory)
+
     // Initialize the ViewModelFactory for login and register
     val loginViewModelFactory = LoginViewModelFactory(apolloClient)
-    val assessmentViewModelFactory = AssessmentViewModelFactory(apolloClient, healthConnectManager)
+    val assessmentViewModelFactory = AssessmentViewModelFactory(apolloClient, healthConnectManager, repository)
     val registerViewModelFactory = RegisterViewModelFactory(apolloClient)
     // Create the LoginViewModel using the factory
     val loginViewModel: LoginViewModel = viewModel(factory = loginViewModelFactory)
@@ -79,17 +90,16 @@ fun AppNavigator(
 
     // Track the login state
     val isLoggedIn = authManager.isSignedIn()
+    val preferencesHelper = app.preferencesHelper
+    val hasCompletedSetup = preferencesHelper.isSetupComplete()
 
-    val startDestination = if (isLoggedIn) {
-        Log.i("Hello", "Hello you there")
-        Screen.SetupScreen.route
-    } else {
-        Screen.LoginScreen.route
+    val startDestination = when {
+        !isLoggedIn -> Screen.LoginScreen.route
+        isLoggedIn && !hasCompletedSetup -> Screen.SetupScreen.route
+        else -> Screen.HomeScreen.route  // or whichever is the primary screen post-login
     }
 
     NavHost(navController = navController, startDestination = startDestination) {
-
-        val availability by healthConnectManager.availability
 
         composable(Screen.LoginScreen.route) {
             LoginScreen(viewModel = loginViewModel,
@@ -118,7 +128,8 @@ fun AppNavigator(
                 factory = SetupScreenViewModelFactory(
                     healthConnectManager = healthConnectManager,
                     navController = navController,
-                    sharedViewModel = sharedViewModel
+                    sharedViewModel = sharedViewModel,
+                    notificationSettingsManager = notificationSettingsManager,
                 )
             )
 
@@ -137,6 +148,7 @@ fun AppNavigator(
                 },
                 viewModel = viewModel,
                 navController = navController,
+                notificationSettingsManager = notificationSettingsManager,
             )
         }
 
@@ -146,7 +158,13 @@ fun AppNavigator(
             )
         }
 
-        composable(Screen.AssessmentScreen.route) {
+        composable(
+            route = Screen.AssessmentScreen.route,
+            deepLinks = listOf(
+                navDeepLink {
+                    uriPattern = "myapp://assessment"
+                }
+            )) {
             val assessmentViewModel: AssessmentViewModel = viewModel(factory = assessmentViewModelFactory)
 
             val onPermissionsResult = { assessmentViewModel.initialLoad() }
@@ -178,9 +196,9 @@ fun AppNavigator(
                 factory = AnswerAssessmentViewModelFactory(
                     healthConnectManager = healthConnectManager,
                     answerViewModel = answerViewModel,
-                    sharedViewModel = sharedViewModel
-                )
-            )
+                    sharedViewModel = sharedViewModel,
+                    questionnaireReminderViewModel = questionnaireReminderViewModel,
+            ))
 
             // Pass the viewModel to the AssessmentPage composable
             AnswerAssessmentPage(
@@ -218,9 +236,12 @@ fun AppNavigator(
                 )
             )
 
+            val onPermissionsResult = { viewModel.refreshUI()}
+
             val permissionsLauncher =
                 rememberLauncherForActivityResult(viewModel.permissionsLauncher) {
                     Log.i("AppNavigator", "Permissions result: $it")
+                    onPermissionsResult()
 
                 }
 

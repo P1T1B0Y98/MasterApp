@@ -53,7 +53,7 @@ fun HomeScreen(
         Spacer (modifier = Modifier.height(16.dp))
 
         Text(
-            text = "Welcome to HealthPulse, ${AuthManager.getUserName()}. A new and innovative way of tracking your health through assessments.",
+            text = "Welcome to MindSync, ${AuthManager.getUserName()}. A new and innovative way of answering questionnaires.",
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center,
@@ -80,10 +80,10 @@ fun HomeScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    Text(text = "Your questionnaires",
+                    Text(text = "Questionnaires",
                         style = TextStyle(
                             color = Color.White,
-                            fontSize = 20.sp,
+                            fontSize = 18.sp,
                         )
                     )
                     Spacer(modifier = Modifier.height(8.dp))

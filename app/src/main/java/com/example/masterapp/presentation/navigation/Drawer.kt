@@ -60,7 +60,7 @@ fun Drawer(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(MaterialTheme.colors.secondary)
+                    .background(MaterialTheme.colors.primary)
                     .padding(8.dp) // You can adjust the padding as needed
             ) {
                 Row(
@@ -97,7 +97,7 @@ fun Drawer(
                         color = Color.White,
                         fontSize = 20.sp,
                     ),
-                    text = stringResource(id = R.string.app_name)
+                    text = stringResource(R.string.app_name)
                 )
             }
             Spacer(modifier = Modifier.height(16.dp))
@@ -167,4 +167,3 @@ fun Drawer(
         }
     }
 }
-

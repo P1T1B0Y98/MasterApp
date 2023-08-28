@@ -57,10 +57,12 @@
         Health Connect.
     </string>
 
-    <string name="permissions_button_label">Request permissions</string>
+    <string name="permissions_button_label">Grant permission</string>
     <string name="permissions_description">
-        In order to continue Health Pulse needs permission from you to collect data from your device. Please click the permission button
-        and grant permission to continue to the app. Data is shared to the app and a third party app for analysis.
+        For a better app experience please grant MindSync permission to retrieve your HealthConnect data. This can be changed later in settings. Take a look at our privacy policy to see how we store your data
+</string>
+    <string name="permissions_description1">
+        You must grant MindSync permission to collect smartwatch data through Health Connect, without it our questionnaires will not function properly. Thank you.
 </string>
 
     <string name="not_available_abbrev">N/A</string>
@@ -143,16 +145,23 @@
     <string name="results_screen">Results</string>
     <string name="health_connect_button_label">Open Health Connect</string>
     <string name="health_connect_description">Look at your permission inside Health Connect and manage which apps can request and write data</string>
-    <string name="setup_health_connect_button_label">Setup Health Connect\n</string>
+    <string name="setup_health_connect_button_label">Setup Health Connect</string>
     <string name="health_connect_installation_description">To continue you must download the Health Connect app so that the most accurate measurements can be taken. Once downloaded come back to the app to finish setup</string>
     <string name="setup_screen">Setup</string>
     <string name="terms_of_service_screen">terms and service\n</string>
     <string name="settings_screen">Settings</string>
     <string name="about_screen">About us</string>
     <string name="permissions_revoked_message">Permissions for this app revoked</string>
-    <string name="request_permissions">Request permissions</string>
-    <string name="privacy_policy_button">Privacy Policy\n</string>
+    <string name="request_permissions">Grant permissions</string>
+    <string name="privacy_policy_button">Privacy Policy</string>
     <string name="ok_button">Ok</string>
-    <string name="permissions_revoked_title">Permissions revoked\n</string>
-    <string name="settings_subtitle">Change your settings or app permissions for health connect on this site. You can also access our privacy policy</string>
+    <string name="permissions_revoked_title">Permissions revoked</string>
+    <string name="settings_subtitle">Change your app settings or app permissions for health connect on this site. You can also access our privacy policy</string>
+    <string name="notifications">Notifications</string>
+    <string name="notifications_description">Change your notification settings</string>
+    <string name="manage_description">Manage the permissions for Health Connect</string>
+    <string name="disconnect_description">Revoke all permissions for Health Connect</string>
+    <string name="privacy_policies_description">View our privacy policy</string>
+    <string name="request_permissions_description">Revoke or enable the permissions for this app and Health Connect</string>
+
 </resources>

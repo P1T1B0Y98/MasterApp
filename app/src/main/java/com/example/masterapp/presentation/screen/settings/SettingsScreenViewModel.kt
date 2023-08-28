@@ -11,45 +11,69 @@ import androidx.health.connect.client.records.HeartRateRecord
 import androidx.health.connect.client.records.HeartRateVariabilityRmssdRecord
 import androidx.health.connect.client.records.SleepSessionRecord
 import androidx.health.connect.client.units.Mass
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import com.example.masterapp.data.HealthConnectManager
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
 class SettingsScreenViewModel(
     private val healthConnectManager: HealthConnectManager,
 ) : ViewModel() {
 
-
-    var uiState: UiState by mutableStateOf(UiState.RequestPermissions)
-
-    private val healthConnectCompatibleApps = healthConnectManager.healthConnectCompatibleApps
-
     private val permissions = healthConnectManager.permissions
 
-    var isPermissionGranted = false
+    val isPermissionGranted: Flow<Boolean> = healthConnectManager.isPermissionGranted
 
+    var uiState: UiState by mutableStateOf(UiState.RequestPermissions)
 
     val permissionsLauncher = healthConnectManager.requestPermissionsActivityContract()
 
     init {
+        observePermissions()
+    }
 
-        viewModelScope.launch{
-            isPermissionGranted = hasAllPermissions()
-
-            uiState = if (isPermissionGranted){
-                UiState.RevokePermissions
+    private fun observePermissions() {
+        isPermissionGranted.onEach { granted ->
+            if (granted) {
+                uiState = UiState.RevokePermissions
             } else {
-                UiState.RequestPermissions
+                uiState = UiState.RequestPermissions
+            }
+        }.launchIn(viewModelScope)
+    }
+
+    fun refreshUI() {
+
+        viewModelScope.launch {
+            val granted = hasAllPermissions()
+            Log.i("SettingsScreenViewModel", "refreshUI: $granted")
+            if (granted) {
+                uiState = UiState.RevokePermissions
+            } else {
+                uiState = UiState.RequestPermissions
             }
         }
-
     }
-    private suspend fun hasAllPermissions(): Boolean {
+
+    suspend fun hasAllPermissions(): Boolean {
         return healthConnectManager.hasAllPermissions(permissions)
     }
+
+    fun revokePermissions() {
+        viewModelScope.launch {
+            healthConnectManager.revokeAllPermissions()
+        }
+        // No need to set isPermissionGranted.value = false here.
+        // This should be handled by the HealthConnectManager and automatically propagated.
+    }
 }
+
 
 sealed class UiState {
     object RequestPermissions : UiState()

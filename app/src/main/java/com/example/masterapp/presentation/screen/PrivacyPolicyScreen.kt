@@ -34,7 +34,7 @@ fun PrivacyPolicyScreen() {
     ) {
         Image(
             modifier = Modifier.fillMaxWidth(0.5f),
-            painter = painterResource(id = R.drawable.stress_management),
+            painter = painterResource(id = R.mipmap.ic_launcher_foreground),
             contentDescription = stringResource(id = R.string.health_connect_logo)
         )
         Spacer(modifier = Modifier.height(32.dp))

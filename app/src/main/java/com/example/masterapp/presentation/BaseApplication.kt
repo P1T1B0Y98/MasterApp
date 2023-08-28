@@ -9,20 +9,30 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.os.Build
 import android.util.Log
+import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.apollographql.apollo3.ApolloClient
 import com.example.masterapp.NotificationWorker
+import com.example.masterapp.NotificationSettingsManager
 import com.example.masterapp.data.HealthConnectManager
 import com.example.masterapp.data.roomDatabase.AnswerDatabase
+import com.example.masterapp.presentation.screen.setup.PreferencesHelper
 import java.util.concurrent.TimeUnit
 
 class BaseApplication : Application() {
     lateinit var apolloClient: ApolloClient
 
+    lateinit var preferencesHelper: PreferencesHelper
+
     val healthConnectManager by lazy {
         HealthConnectManager(this)
     }
+
+    val notificationSettingsManager by lazy {
+        NotificationSettingsManager(this)
+    }
+
 
     val answerDatabase: AnswerDatabase by lazy {
         AnswerDatabase.getDatabase(this)
@@ -31,12 +41,14 @@ class BaseApplication : Application() {
     override fun onCreate() {
         super.onCreate()
 
+        createNotificationChannel()
         AuthManager.initialize(this)
         apolloClient = ApolloClient.Builder()
             .serverUrl("http://192.168.0.109:8080/api") // Use the dynamically retrieved IP address
             .addHttpInterceptor(AuthorizationInterceptor(AuthManager))
             .build()
-
+        scheduleNotification()
+        preferencesHelper = PreferencesHelper(this)
     }
 
     private fun getServerUrlFromWifi(): String {
@@ -50,9 +62,11 @@ class BaseApplication : Application() {
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val name = "Reminder Channel"
+            val descriptionText = "Channel for Reminder Notifications"
             val importance = NotificationManager.IMPORTANCE_DEFAULT
-            val channel = NotificationChannel("YOUR_CHANNEL_ID", "Your Channel Name", importance).apply {
-                description = "Your Channel Description"
+            val channel = NotificationChannel("REMINDER_CHANNEL_ID", name, importance).apply {
+                description = descriptionText
             }
             val notificationManager: NotificationManager =
                 getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -60,12 +74,16 @@ class BaseApplication : Application() {
         }
     }
 
+
     private fun scheduleNotification() {
-        val dailyWorkRequest = PeriodicWorkRequestBuilder<NotificationWorker>(1, TimeUnit.DAYS)
+        Log.i("BaseApplication", "scheduleNotification")
+        val workRequest = OneTimeWorkRequestBuilder<NotificationWorker>()
+            .setInitialDelay(30, TimeUnit.SECONDS)
             .build()
 
-        WorkManager.getInstance(this).enqueue(dailyWorkRequest)
+        WorkManager.getInstance(this).enqueue(workRequest)
     }
+
 
 }
 

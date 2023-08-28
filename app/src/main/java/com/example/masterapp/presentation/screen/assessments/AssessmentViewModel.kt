@@ -2,6 +2,7 @@ package com.example.masterapp.presentation.screen.assessments
 
 import android.os.RemoteException
 import android.util.Log
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -17,6 +18,7 @@ import com.example.masterapp.data.Assessment
 import com.example.masterapp.data.AssessmentSchema
 import com.example.masterapp.data.HealthConnectManager
 import com.example.masterapp.data.Option
+import com.example.masterapp.data.roomDatabase.QuestionnaireRepository
 import com.example.masterapp.presentation.screen.setup.SetupScreenViewModel
 import com.example.masterapp.type.AssessmentsFilterInput
 import com.example.masterapp.type.AssessmentsOrderByEnum
@@ -26,9 +28,10 @@ import java.util.UUID
 
 class AssessmentViewModel(
     private val apolloClient: ApolloClient,
-    private val healthConnectManager: HealthConnectManager) : ViewModel() {
+    private val healthConnectManager: HealthConnectManager,
+    private val questionnaireRepository: QuestionnaireRepository) : ViewModel() {
 
-    var uiState: UiState by mutableStateOf(UiState.RequestPermissions)
+    var uiState: UiState by mutableStateOf(UiState.Loading)
 
     private val permissions = healthConnectManager.permissions
 
@@ -37,18 +40,27 @@ class AssessmentViewModel(
 
     val permissionsLauncher = healthConnectManager.requestPermissionsActivityContract()
 
+    var assessmentPair: Pair<List<Assessment>, List<Assessment>>? by mutableStateOf(null)
+
 
     init {
-
-        viewModelScope.launch{
-
-            uiState = if (hasAllPermissions()){
-                UiState.PermissionsAccepted
+        viewModelScope.launch {
+            if (hasAllPermissions()) {
+                uiState = UiState.Loading
+                // Assuming you have a userId, filter, etc. to use {
+                fetchAndCategorizeAssessments(
+                    userId = AuthManager.getUserId(),
+                    filter = null,
+                    limit = null,
+                    offset = null,
+                    orderBy = null
+                )
             } else {
-                UiState.RequestPermissions
+                uiState = UiState.RequestPermissions
             }
         }
     }
+
 
     fun initialLoad() {
         viewModelScope.launch {
@@ -57,7 +69,43 @@ class AssessmentViewModel(
             }
         }
     }
-    suspend fun getAssessmentsList(
+
+    private suspend fun fetchAndCategorizeAssessments(
+        userId: String,
+        filter: AssessmentsFilterInput?,
+        limit: Int?,
+        offset: Int?,
+        orderBy: AssessmentsOrderByEnum?
+    ) {
+
+        val allAssessments = getAssessmentsList(filter, limit, offset, orderBy)
+
+        assessmentPair = allAssessments?.let { categorizeAssessments(userId, it) }
+        uiState = UiState.PermissionsAccepted
+    }
+
+    private suspend fun categorizeAssessments(
+        userId: String,
+        assessments: List<Assessment>
+    ): Pair<List<Assessment>, List<Assessment>> {
+        val completedAssessments = mutableListOf<Assessment>()
+        val readyAssessments = mutableListOf<Assessment>()
+
+        for (assessment in assessments) {
+            if (isQuestionnaireCompleted(userId, assessment.id)) {
+                Log.i("AssessmentsList", "Assessment ${assessment.id} is completed")
+                completedAssessments.add(assessment)
+            } else {
+                Log.i("AssessmentsList", "Assessment ${assessment.id} is ready")
+                readyAssessments.add(assessment)
+            }
+        }
+
+        return Pair(readyAssessments, completedAssessments)
+    }
+
+
+    private suspend fun getAssessmentsList(
         filter: AssessmentsFilterInput?,
         limit: Int?,
         offset: Int?,
@@ -96,12 +144,6 @@ class AssessmentViewModel(
                         }
                     )
                 }
-
-                // Printing out all assessments
-                assessments?.forEach { assessment ->
-                    Log.i("AssessmentDetails", "ID: ${assessment.id}, Title: ${assessment.title}, Type: ${assessment.assessmentType}, Frequency: ${assessment.frequency}")
-                }
-
                 return assessments
             } else {
                 Log.w("AssessmentsList", "Failed to get assessments list")
@@ -118,15 +160,14 @@ class AssessmentViewModel(
     }
 
 
-    suspend fun tryWithPermissionsCheck(block: suspend () -> Unit) {
+    private suspend fun tryWithPermissionsCheck(block: suspend () -> Unit) {
         permissionsGranted.value = healthConnectManager.hasAllPermissions(permissions)
-        healthConnectManager.isPermissionGranted.value = permissionsGranted.value
+        healthConnectManager._isPermissionGranted.value = permissionsGranted.value
         uiState = try {
             if (permissionsGranted.value) {
                 block()
                 UiState.PermissionsAccepted
-            }
-            else {
+            } else {
                 UiState.RequestPermissions
             }
         } catch (remoteException: RemoteException) {
@@ -139,9 +180,29 @@ class AssessmentViewModel(
             UiState.Error(illegalStateException)
         }
     }
+
+    private suspend fun isQuestionnaireCompleted(userId: String, questionnaireID: String): Boolean {
+        // Fetch record for the given userId and questionnaireId
+        Log.i("QuestionnaireReminder", "Fetching questionnaire reminder for user $userId and questionnaire $questionnaireID")
+        val reminder = questionnaireRepository.getQuestionnaire(userId, questionnaireID)
+        Log.i("QuestionnaireReminder", "Reminder: $reminder")
+        reminder?.let {
+            // If completedTimestamp is null, the questionnaire hasn't been completed yet
+            if (reminder == null) {
+                return false
+            }
+
+            // If current time is greater than or equal to the notificationTimestamp, then the user can take the questionnaire again
+            return System.currentTimeMillis() <= it.notificationTimestamp
+        }
+
+        return false
+
+    }
 }
 
 sealed class UiState {
+    object Loading: UiState()
     object RequestPermissions : UiState()
     object PermissionsAccepted : UiState()
     data class Error(val exception: Throwable, val uuid: UUID = UUID.randomUUID()) : UiState()

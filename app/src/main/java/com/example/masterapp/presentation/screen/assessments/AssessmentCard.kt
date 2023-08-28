@@ -32,13 +32,14 @@ import com.example.masterapp.type.AssessmentTypeEnum
 @Composable
 fun AssessmentCard(
     assessment: Assessment,
-    onClick: () -> Unit) {
+    onClick: (() -> Unit)? = null
+) {
     val cardColor = getColorForType(assessment.assessmentType)
     Log.i("AssessmentCard", "Card color: $cardColor")
     Card(
         modifier = Modifier
-            .padding(8.dp)
-            .clickable { onClick() }
+            .padding(top= 8.dp, bottom = 8.dp, start = 16.dp, end = 16.dp)
+            .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
             .fillMaxWidth(), // Make the card use the whole width of the screen
         elevation = 8.dp, // Increase the elevation for a shiny appearance
         shape = RoundedCornerShape(16.dp),

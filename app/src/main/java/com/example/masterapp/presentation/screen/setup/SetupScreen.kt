@@ -33,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -47,7 +48,9 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavController
+import com.example.masterapp.NotificationSettingsManager
 import com.example.masterapp.R
+import com.example.masterapp.presentation.BaseApplication
 import com.example.masterapp.presentation.navigation.Screen
 import com.example.masterapp.presentation.theme.Lavender
 
@@ -59,8 +62,13 @@ fun SetupScreen(
     navController: NavController,
     uiState: SetupScreenViewModel.UiState,
     onPermissionsLaunch: (Set<String>) -> Unit = {},
+    notificationSettingsManager: NotificationSettingsManager
 
     ) {
+
+    val context = LocalContext.current
+    val app = context.applicationContext as BaseApplication
+    val preferencesHelper = app.preferencesHelper
 
     val errorId = rememberSaveable { mutableStateOf(UUID.randomUUID()) }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
@@ -185,7 +193,7 @@ fun SetupScreen(
                         backgroundColor = Color.White,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(275.dp)
+                            .height(240.dp)
                     ) {
                         Column(
                             modifier = Modifier.padding(16.dp),
@@ -199,7 +207,10 @@ fun SetupScreen(
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Button(
-                                onClick = { onPermissionsLaunch(viewModel.permissions) },
+                                onClick = {
+                                    onPermissionsLaunch(viewModel.permissions)
+                                    preferencesHelper.setSetupComplete(true)
+                                          },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(50.dp),
@@ -212,6 +223,47 @@ fun SetupScreen(
                             }
                         }
                     }
+                    Card(
+                        shape = RoundedCornerShape(8.dp),
+                        border = BorderStroke(1.dp, MaterialTheme.colors.primary),
+                        elevation = 8.dp,
+                        backgroundColor = Color.White,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(150.dp)  // Adjust the height as required
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            val isNotificationEnabled = viewModel.isNotificationEnabled
+
+                            Text(
+                                text = if (isNotificationEnabled) {
+                                    "You have notifications enabled. Remember to check them regularly."
+                                } else {
+                                    "Notifications are required to remind you to fill out your questionnaire. You can change your notification settings later in the app. Or right now if you click the button underneath."
+                                },
+                                fontSize = 18.sp,
+                                color = MaterialTheme.colors.primary,
+                                textAlign = TextAlign.Start
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Button(
+                                onClick = { viewModel.requestNotificationPermission() },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(50.dp),
+                            ) {
+                                Text(
+                                    text = "Notification Settings",
+                                    fontSize = 16.sp,
+                                    textAlign = TextAlign.Center,
+                                )
+                            }
+                        }
+                    }
+
                     ClickableText(
                         text = AnnotatedString("Skip and fix it later"),
                         style = TextStyle(
@@ -223,6 +275,7 @@ fun SetupScreen(
                         onClick = {
                             // Navigate to the registration screen
                             navController.navigate(Screen.HomeScreen.route)
+                            preferencesHelper.setSetupComplete(true)
                         },
                         modifier = Modifier
                             .align(Alignment.CenterHorizontally)

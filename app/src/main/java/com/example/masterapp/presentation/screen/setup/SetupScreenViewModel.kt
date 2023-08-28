@@ -3,6 +3,7 @@ package com.example.masterapp.presentation.screen.setup
 import android.os.RemoteException
 import android.util.Log
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -14,9 +15,13 @@ import androidx.health.connect.client.units.Mass
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
+import com.example.masterapp.NotificationSettingsManager
 import com.example.masterapp.data.HealthConnectManager
 import com.example.masterapp.presentation.navigation.Screen
 import com.example.masterapp.presentation.screen.SharedViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.io.IOException
 import java.util.UUID
@@ -24,7 +29,8 @@ import java.util.UUID
 class SetupScreenViewModel(
     private val healthConnectManager: HealthConnectManager,
     private val navController: NavController,
-    private val sharedViewModel: SharedViewModel
+    private val sharedViewModel: SharedViewModel,
+    private val notificationSettingsManager: NotificationSettingsManager,
 ) : ViewModel() {
 
     // Live data or State to manage UI state
@@ -34,8 +40,6 @@ class SetupScreenViewModel(
     private val healthConnectCompatibleApps = healthConnectManager.healthConnectCompatibleApps
 
     val permissions = healthConnectManager.permissions
-    var weeklyAvg: MutableState<Mass?> = mutableStateOf(Mass.kilograms(0.0))
-        private set
 
     var permissionsGranted = mutableStateOf(false)
         private set
@@ -43,13 +47,16 @@ class SetupScreenViewModel(
     val permissionsLauncher = healthConnectManager.requestPermissionsActivityContract()
 
     // Other properties and methods related to setup ...
-    init {
+    val isNotificationEnabled: Boolean
+        get() = notificationSettingsManager.canShowNotifications()
 
-        viewModelScope.launch{
+    fun requestNotificationPermission() = notificationSettingsManager.openNotificationSettings()
+    init {
+        viewModelScope.launch {
             appInstalled()
         }
-
     }
+
     fun refreshUI() {
         viewModelScope.launch{
             appInstalled()
@@ -102,7 +109,7 @@ class SetupScreenViewModel(
      */
     suspend fun tryWithPermissionsCheck(block: suspend () -> Unit) {
         permissionsGranted.value = healthConnectManager.hasAllPermissions(permissions)
-        healthConnectManager.isPermissionGranted.value = permissionsGranted.value
+        healthConnectManager._isPermissionGranted.value = permissionsGranted.value
         Log.i("WelcomeScreenViewModel", "tryWithPermissionsCheck: ${permissionsGranted.value}")
         uiState = try {
             if (permissionsGranted.value) {

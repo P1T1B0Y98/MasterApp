@@ -30,10 +30,13 @@ import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
 import androidx.health.connect.client.units.Mass
 import androidx.health.connect.client.units.Velocity
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import java.time.Duration
 import java.time.Instant
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
+import kotlinx.coroutines.flow.Flow
 import kotlin.random.Random
 
 // The minimum android level that can use Health Connect
@@ -53,8 +56,10 @@ class HealthConnectManager(val context: Context) {
         HealthPermission.getReadPermission(ExerciseSessionRecord::class),
     )
 
-    var isPermissionGranted = mutableStateOf(false)
-        private set
+    val _isPermissionGranted = MutableStateFlow(false)
+
+    // This is the public Flow (immutable)
+    val isPermissionGranted: Flow<Boolean> = _isPermissionGranted.asStateFlow()
 
     val healthConnectCompatibleApps by lazy {
         val intent = Intent("androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE")
@@ -135,7 +140,19 @@ class HealthConnectManager(val context: Context) {
      * [PermissionController.createRequestPermissionResultContract].
      */
     suspend fun hasAllPermissions(permissions: Set<String>): Boolean {
-        return healthConnectClient.permissionController.getGrantedPermissions().containsAll(permissions)
+        Log.i("HealthConnectManager", "Checking if all permissions are granted...")
+        val grantedPermissions = healthConnectClient.permissionController.getGrantedPermissions()
+        Log.i("HealthConnectManager", "Currently granted permissions: $grantedPermissions")
+
+        return if (grantedPermissions.containsAll(permissions)) {
+            _isPermissionGranted.value = true
+            Log.i("HealthConnectManager", "All permissions are granted!")
+            true
+        } else {
+            _isPermissionGranted.value = false
+            Log.i("HealthConnectManager", "Not all permissions are granted.")
+            false
+        }
     }
 
     fun requestPermissionsActivityContract(): ActivityResultContract<Set<String>, Set<String>> {
@@ -144,18 +161,18 @@ class HealthConnectManager(val context: Context) {
 
     suspend fun revokeAllPermissions() {
         healthConnectClient.permissionController.revokeAllPermissions()
-        isPermissionGranted.value = false
+        _isPermissionGranted.value = false
     }
 
 
-    suspend fun readSleepRecords(): List<SleepSessionData> {
+    suspend fun readSleepRecords(startTime: Instant, endTime: Instant ): List<SleepSessionData> {
         Log.i("Sleep Records", "Reading sleep records")
         val response =
             healthConnectClient.readRecords(ReadRecordsRequest(
                 recordType = SleepSessionRecord::class,
                 timeRangeFilter = TimeRangeFilter.between(
-                    ZonedDateTime.now().minus(1, ChronoUnit.DAYS).toInstant(),
-                    ZonedDateTime.now().toInstant()
+                    startTime,
+                    endTime
                 )
             ))
 

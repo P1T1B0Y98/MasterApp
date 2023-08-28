@@ -20,18 +20,22 @@ import com.example.masterapp.data.dateTimeWithOffsetOrDefault
 import com.example.masterapp.data.roomDatabase.Answer
 import com.example.masterapp.data.roomDatabase.AnswerViewModel
 import com.example.masterapp.data.roomDatabase.QuestionAnswer
+import com.example.masterapp.data.roomDatabase.QuestionnaireReminder
+import com.example.masterapp.data.roomDatabase.QuestionnaireReminderViewModel
 import com.example.masterapp.presentation.screen.SharedViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import java.time.Instant
 import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 
 
 class AnswerAssessmentViewModel(
     private val healthConnectManager: HealthConnectManager,
     private val answerViewModel: AnswerViewModel,
-    private val sharedViewModel: SharedViewModel
+    private val sharedViewModel: SharedViewModel,
+    private val questionnaireReminderViewModel: QuestionnaireReminderViewModel
 ) : ViewModel() {
 
     private val _smartwatchDataCollected = MutableStateFlow(false)
@@ -73,7 +77,7 @@ class AnswerAssessmentViewModel(
         }
     }
 
-    suspend fun collectAndSendSmartwatchData(): List<List<Any>>
+    suspend fun collectAndSendSmartwatchData(timeInterval: String?): List<List<Any>>
     {
         val hrvData = readHRVdata()
         val heartRateData = readHeartRateData()
@@ -89,14 +93,19 @@ class AnswerAssessmentViewModel(
 
     }
 
-    suspend fun readSleepData(): List<SleepSessionData> {
-
-        return healthConnectManager.readSleepRecords()
+    suspend fun readSleepData(timeInterval: String?): List<SleepSessionData>? {
+        Log.i("Time Interval", timeInterval.toString())
+        val timeIntervalEnum = timeInterval?.let { mapDisplayValueToTimeInterval(it) }
+        val startTime = timeIntervalEnum?.let { getStartTimeForInterval(it) }
+        val endTime = ZonedDateTime.now().toInstant()
+        return startTime?.let { healthConnectManager.readSleepRecords(it, endTime) }
     }
 
-    suspend fun readExerciseSessionsData(): List<ExerciseSession> {
+    suspend fun readExerciseSessionsData(timeInterval: String?): List<ExerciseSession> {
+
         val startOfDay = ZonedDateTime.now().truncatedTo(ChronoUnit.DAYS)
         val now = Instant.now()
+
 
         sessionsList.value = healthConnectManager
             .readExerciseSessions(startOfDay.toInstant(), now)
@@ -151,7 +160,8 @@ class AnswerAssessmentViewModel(
         assessmentId: String,
         assessmentTitle: String,
         assessmentType: String,
-        timestamp: String,
+        timestamp: ZonedDateTime,
+        frequency: String,
         answerMap: Map<Int, List<AnswerData>>,
 
     ) {
@@ -182,7 +192,7 @@ class AnswerAssessmentViewModel(
             assessmentId = assessmentId,
             assessmentTitle = assessmentTitle,
             assessmentType = assessmentType,
-            timestamp = timestamp,
+            timestamp = timestamp.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")),
             questionAnswers = questionAnswers
         )
         Log.i("AnswerAssessmentViewModel", "Adding answer to database: $answer")
@@ -190,7 +200,51 @@ class AnswerAssessmentViewModel(
         // Replace 'yourRepository' with your actual database or repository instance
         answerViewModel.insertAnswer(answer)
 
+        val futureNotification = getTimeForNotification(frequency, timestamp.toInstant().toEpochMilli())
+        val questionnaireReminder = QuestionnaireReminder(
+            userId = userId,
+            questionnaireId = assessmentId,
+            completedTimestamp = timestamp.toInstant().toEpochMilli(),
+            notificationTimestamp = futureNotification
+        )
+
+        questionnaireReminderViewModel.insertReminder(questionnaireReminder)
+
         uiState.value = AnswerAssessmentUiState.Submitted
     }
+
+    private fun getTimeForNotification(frequency: String, timestamp: Long): Long {
+        val time = when (frequency) {
+            "Daily" -> timestamp + 86400000
+            "Weekly" -> timestamp + 604800000
+            "Monthly" -> timestamp + 2629800000
+            else -> timestamp + 86400000
+        }
+        return time
+    }
+
+    private fun mapDisplayValueToTimeInterval(displayValue: String): TimeInterval? {
+        return TimeInterval.values().find { it.displayValue == displayValue }
+    }
+
+    private fun getStartTimeForInterval(interval: TimeInterval): Instant {
+        return when (interval) {
+            TimeInterval.FIVE_MINUTES -> ZonedDateTime.now().minus(5, ChronoUnit.MINUTES).toInstant()
+            TimeInterval.THIRTY_MINUTES -> ZonedDateTime.now().minus(30, ChronoUnit.MINUTES).toInstant()
+            TimeInterval.ONE_HOUR -> ZonedDateTime.now().minus(1, ChronoUnit.HOURS).toInstant()
+            TimeInterval.ONE_DAY -> ZonedDateTime.now().minus(1, ChronoUnit.DAYS).toInstant()
+            TimeInterval.ONE_WEEK -> ZonedDateTime.now().minus(1, ChronoUnit.WEEKS).toInstant()
+            TimeInterval.ONE_MONTH -> ZonedDateTime.now().minus(1, ChronoUnit.MONTHS).toInstant()
+        }
+    }
+}
+
+enum class TimeInterval(val displayValue: String) {
+    FIVE_MINUTES("5 min"),
+    THIRTY_MINUTES("30 min"),
+    ONE_HOUR("1 hour"),
+    ONE_DAY("day"),  // updated this entry to use "day"
+    ONE_WEEK("week"),
+    ONE_MONTH("month")
 }
 

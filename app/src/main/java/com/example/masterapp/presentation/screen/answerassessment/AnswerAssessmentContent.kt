@@ -87,17 +87,23 @@ fun AnswerAssessmentContent(
             val currentQuestion = questions[currentQuestionIndex]
             Log.i("CurrentQuestion", currentQuestion.toString())
             Log.i("CurrentQuestionIndex", currentQuestionIndex.toString())
-            when (currentQuestion.options?.find { it.field == "dataOption" }?.value) {
+            val dataOption = currentQuestion.options?.find { it.field == "dataOption" }?.value
+            val timeInterval =
+                currentQuestion.options?.find { it.field == "timeIntervalOption" }?.value
+
+            when (dataOption) {
                 "Stress" -> {
-                    val data = viewModel.collectAndSendSmartwatchData()
+                    val data = viewModel.collectAndSendSmartwatchData(timeInterval)
                     answerMap[currentQuestionIndex] = AnswerData.Stress(data)
                 }
+
                 "Sleep" -> {
-                    val data = viewModel.readSleepData()
-                    answerMap[currentQuestionIndex] = AnswerData.Sleep(data)
+                    val data = viewModel.readSleepData(timeInterval)
+                    answerMap[currentQuestionIndex] = data?.let { AnswerData.Sleep(it) }!!
                 }
+
                 "Exercise" -> {
-                    val data = viewModel.readExerciseSessionsData()
+                    val data = viewModel.readExerciseSessionsData(timeInterval)
                     answerMap[currentQuestionIndex] = AnswerData.Exercise(data)
                 }
             }
@@ -312,7 +318,7 @@ fun AnswerAssessmentContent(
 
                                 if (isDataCollected) {
                                     Text(
-                                        text = "Collecting data from smartwatch...",
+                                        text = "Please wait a moment while we collect your smartwatch data...",
                                         color = Color.Gray
                                     )
 
@@ -335,8 +341,12 @@ fun AnswerAssessmentContent(
                                     // Simulate a delay of 1 or 2 seconds (adjust as needed)
                                     LaunchedEffect(Unit) {
                                         delay(2000) // or delay(2000) for 2 seconds
-                                        currentQuestionIndex++
-                                        isDataCollected = false
+                                        if (isLastQuestion) {
+                                            submitAllAnswers(sharedViewModel, viewModel, answerMap)
+                                        } else {
+                                            currentQuestionIndex++
+                                            isDataCollected = false
+                                        }
                                     }
                                 }
                             }
@@ -361,36 +371,12 @@ fun AnswerAssessmentContent(
                                         else -> answer != null
                                     }
                                     if (isAnswered) {
+                                        // Check if the current question is the last question
+                                        Log.i("IsAnswered", isAnswered.toString())
                                         if (isLastQuestion) {
-                                            // All questions answered, do something (e.g., submit answers)
-                                            val userId = AuthManager.getUserId()
-                                            val assessmentId =
-                                                sharedViewModel.getAssessment()?.id ?: ""
-                                            val assessmentTitle =
-                                                sharedViewModel.getAssessment()?.title ?: ""
-                                            val assessmentType =
-                                                sharedViewModel.getAssessment()?.assessmentType?.name
-                                                    ?: "" // Assuming it's an enum
-                                            val timestamp = ZonedDateTime.now()
-                                                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
+                                            submitAllAnswers(sharedViewModel, viewModel, answerMap)
+                                            Log.i("Last question", "Last question and submit")
 
-                                            val answersToSave: Map<Int, List<AnswerData>> =
-                                                answerMap.mapValues { listOf(it.value) }
-                                            viewModel.saveAnswersToDatabase(
-                                                userId,
-                                                assessmentId,
-                                                assessmentTitle,
-                                                assessmentType,
-                                                timestamp,
-                                                answersToSave
-                                            )
-
-
-                                            val answers = StringBuilder()
-                                            answerMap.forEach { (questionIndex, answerList) ->
-                                                answers.append("Question $questionIndex: $answerList\n")
-                                            }
-                                            Log.d("TAG", "All questions answered:\n$answers")
                                         } else {
                                             val answers = StringBuilder()
                                             answerMap.forEach { (questionIndex, answerList) ->
@@ -428,10 +414,32 @@ fun AnswerAssessmentContent(
         }
     }
 
+    // Submit all answers to the server
+
     // Automatically submit the answer when the focus is lost from the text field
     val softwareKeyboardController = LocalSoftwareKeyboardController.current
     DisposableEffect(currentQuestionIndex) {
         softwareKeyboardController?.hide()
         onDispose { }
     }
+}
+
+fun submitAllAnswers(sharedViewModel: SharedViewModel, viewModel: AnswerAssessmentViewModel, answerMap: Map<Int, AnswerData>) {
+    val userId = AuthManager.getUserId()
+    val assessmentId = sharedViewModel.getAssessment()?.id ?: ""
+    val assessmentTitle = sharedViewModel.getAssessment()?.title ?: ""
+    val assessmentType =
+        sharedViewModel.getAssessment()?.assessmentType?.name ?: "" // Assuming it's an enum
+    val timestamp = ZonedDateTime.now()
+    val answersToSave: Map<Int, List<AnswerData>> = answerMap.mapValues { listOf(it.value) }
+    val frequency = sharedViewModel.getAssessment()?.frequency ?: ""
+    viewModel.saveAnswersToDatabase(
+        userId,
+        assessmentId,
+        assessmentTitle,
+        assessmentType,
+        timestamp,
+        frequency,
+        answersToSave
+    )
 }
