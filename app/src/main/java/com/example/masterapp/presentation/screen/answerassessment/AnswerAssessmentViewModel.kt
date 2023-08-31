@@ -16,9 +16,10 @@ import com.example.masterapp.data.AnswerData
 import com.example.masterapp.data.Assessment
 import com.example.masterapp.data.AssessmentSchema
 import com.example.masterapp.data.DynamicAnswerData
+import com.example.masterapp.data.EncryptionHelper
+import com.example.masterapp.data.EncryptionHelper.getSecretKey
 import com.example.masterapp.data.ExerciseSession
 import com.example.masterapp.data.HealthConnectManager
-import com.example.masterapp.data.HeartRateDataSample
 import com.example.masterapp.data.HeartRateMetrics
 import com.example.masterapp.data.HeartRateVariabilityData
 import com.example.masterapp.data.SleepSessionData
@@ -301,12 +302,26 @@ class AnswerAssessmentViewModel(
             formData = Optional.Present(formDataMap)
         )
 
-        Log.i("AnswerAssessmentViewModel", "Input data: $inputData")
+        val formDatas = inputData.formData
+        Log.i("Input data", "Input data: $formDatas")
+
+// Assuming inputData.formData is a String. If not, convert it to String before encrypting.
+        val serializedFormData = Gson().toJson(formDataMap)
+        val encryptedFormData = EncryptionHelper.encrypt(serializedFormData, "wilshere")
+
+        Log.i("SerializedFormData", serializedFormData)
+// Now use encryptedFormData for your mutation.
+        val encryptedInput = AssessmentResponseInput(
+            assessmentID = inputData.assessmentID,
+            formData = Optional.Present(encryptedFormData)
+        )
+
+        Log.i("AnswerAssessmentViewModel", "Input data: $encryptedInput")
 
         viewModelScope.launch {
             try {
                 val response =
-                    apolloClient.mutate(ASSESSMENTS_SUBMITMutation(data = inputData)).execute()
+                    apolloClient.mutate(ASSESSMENTS_SUBMITMutation(data = encryptedInput)).execute()
 
                 if (response.hasErrors()) {
                     // Handle GraphQL errors. This could be logging, showing a message to the user, etc.

@@ -15,9 +15,11 @@ import androidx.work.WorkManager
 import com.apollographql.apollo3.ApolloClient
 import com.example.masterapp.NotificationWorker
 import com.example.masterapp.NotificationSettingsManager
+import com.example.masterapp.data.EncryptionHelper
 import com.example.masterapp.data.HealthConnectManager
 import com.example.masterapp.data.roomDatabase.AnswerDatabase
 import com.example.masterapp.presentation.screen.setup.PreferencesHelper
+import java.security.KeyStore
 import java.util.concurrent.TimeUnit
 
 class BaseApplication : Application() {
@@ -49,6 +51,12 @@ class BaseApplication : Application() {
             .build()
         scheduleNotification()
         preferencesHelper = PreferencesHelper(this)
+        // Generate and store the secret key
+        val secretKeyAlias = "Wilshere" // Set an alias for the secret key
+        val secretKey = EncryptionHelper.generateSecretKey(secretKeyAlias)
+        val keyStore = KeyStore.getInstance("AndroidKeyStore")
+        keyStore.load(null)
+        keyStore.setEntry(secretKeyAlias, KeyStore.SecretKeyEntry(secretKey), null)
     }
 
     private fun getServerUrlFromWifi(): String {
@@ -74,7 +82,6 @@ class BaseApplication : Application() {
         }
     }
 
-
     private fun scheduleNotification() {
         Log.i("BaseApplication", "scheduleNotification")
         val workRequest = OneTimeWorkRequestBuilder<NotificationWorker>()
@@ -83,9 +90,4 @@ class BaseApplication : Application() {
 
         WorkManager.getInstance(this).enqueue(workRequest)
     }
-
-
 }
-
-
-
