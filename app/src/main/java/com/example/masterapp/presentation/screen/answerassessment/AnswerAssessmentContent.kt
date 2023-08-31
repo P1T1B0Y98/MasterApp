@@ -51,11 +51,11 @@ import androidx.compose.ui.unit.dp
 import com.example.masterapp.R
 import com.example.masterapp.data.AnswerData
 import com.example.masterapp.data.Assessment
+import com.example.masterapp.data.AssessmentSchema
 import com.example.masterapp.presentation.screen.SharedViewModel
 import com.example.masterapp.type.QuestionEnum
 import kotlinx.coroutines.delay
 import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -342,7 +342,7 @@ fun AnswerAssessmentContent(
                                     LaunchedEffect(Unit) {
                                         delay(2000) // or delay(2000) for 2 seconds
                                         if (isLastQuestion) {
-                                            submitAllAnswers(sharedViewModel, viewModel, answerMap)
+                                            submitAllAnswers(sharedViewModel, viewModel, answerMap, questions)
                                         } else {
                                             currentQuestionIndex++
                                             isDataCollected = false
@@ -374,7 +374,7 @@ fun AnswerAssessmentContent(
                                         // Check if the current question is the last question
                                         Log.i("IsAnswered", isAnswered.toString())
                                         if (isLastQuestion) {
-                                            submitAllAnswers(sharedViewModel, viewModel, answerMap)
+                                            submitAllAnswers(sharedViewModel, viewModel, answerMap, questions)
                                             Log.i("Last question", "Last question and submit")
 
                                         } else {
@@ -424,7 +424,7 @@ fun AnswerAssessmentContent(
     }
 }
 
-fun submitAllAnswers(sharedViewModel: SharedViewModel, viewModel: AnswerAssessmentViewModel, answerMap: Map<Int, AnswerData>) {
+fun submitAllAnswers(sharedViewModel: SharedViewModel, viewModel: AnswerAssessmentViewModel, answerMap: Map<Int, AnswerData>, questions: List<AssessmentSchema>) {
     val userId = AuthManager.getUserId()
     val assessmentId = sharedViewModel.getAssessment()?.id ?: ""
     val assessmentTitle = sharedViewModel.getAssessment()?.title ?: ""
@@ -440,6 +440,7 @@ fun submitAllAnswers(sharedViewModel: SharedViewModel, viewModel: AnswerAssessme
         assessmentType,
         timestamp,
         frequency,
-        answersToSave
+        answersToSave,
+        questions
     )
 }

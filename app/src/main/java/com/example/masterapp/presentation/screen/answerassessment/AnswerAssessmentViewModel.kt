@@ -7,15 +7,22 @@ import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.HeartRateRecord
 import androidx.health.connect.client.records.HeartRateVariabilityRmssdRecord
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.apollographql.apollo3.ApolloClient
+import com.apollographql.apollo3.api.Optional
+import com.apollographql.apollo3.exception.ApolloException
+import com.example.masterapp.ASSESSMENTS_SUBMITMutation
 import com.example.masterapp.data.AnswerData
 import com.example.masterapp.data.Assessment
+import com.example.masterapp.data.AssessmentSchema
 import com.example.masterapp.data.DynamicAnswerData
 import com.example.masterapp.data.ExerciseSession
 import com.example.masterapp.data.HealthConnectManager
-import com.example.masterapp.data.HeartRateData
 import com.example.masterapp.data.HeartRateDataSample
+import com.example.masterapp.data.HeartRateMetrics
 import com.example.masterapp.data.HeartRateVariabilityData
 import com.example.masterapp.data.SleepSessionData
+import com.example.masterapp.data.StressData
 import com.example.masterapp.data.dateTimeWithOffsetOrDefault
 import com.example.masterapp.data.roomDatabase.Answer
 import com.example.masterapp.data.roomDatabase.AnswerViewModel
@@ -23,8 +30,12 @@ import com.example.masterapp.data.roomDatabase.QuestionAnswer
 import com.example.masterapp.data.roomDatabase.QuestionnaireReminder
 import com.example.masterapp.data.roomDatabase.QuestionnaireReminderViewModel
 import com.example.masterapp.presentation.screen.SharedViewModel
+import com.example.masterapp.type.AssessmentResponseInput
+import com.example.masterapp.type.QuestionEnum
+import com.google.gson.Gson
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -35,14 +46,15 @@ class AnswerAssessmentViewModel(
     private val healthConnectManager: HealthConnectManager,
     private val answerViewModel: AnswerViewModel,
     private val sharedViewModel: SharedViewModel,
-    private val questionnaireReminderViewModel: QuestionnaireReminderViewModel
+    private val questionnaireReminderViewModel: QuestionnaireReminderViewModel,
+    private val apolloClient: ApolloClient
 ) : ViewModel() {
 
     private val _smartwatchDataCollected = MutableStateFlow(false)
     val smartwatchDataCollected: StateFlow<Boolean> = _smartwatchDataCollected
     var sessionsList: MutableState<List<ExerciseSession>> = mutableStateOf(listOf())
         private set
-
+    val questionsList = mutableListOf<Map<String, Any>>()
     sealed class AnswerAssessmentUiState {
         object Loading : AnswerAssessmentUiState()
         data class Success(val assessment: Assessment) : AnswerAssessmentUiState()
@@ -77,21 +89,45 @@ class AnswerAssessmentViewModel(
         }
     }
 
-    suspend fun collectAndSendSmartwatchData(timeInterval: String?): List<List<Any>>
-    {
-        val hrvData = readHRVdata()
-        val heartRateData = readHeartRateData()
+    fun addAnswer(questionIndex: Int, question: String, answer: Any) {
+        val updatedQuestion = questionsList.getOrNull(questionIndex)?.toMutableMap()
+
+        if (updatedQuestion != null) {
+            // Update the existing question entry with the new answer
+            updatedQuestion["answer"] = answer
+            questionsList[questionIndex] = updatedQuestion
+        } else {
+            // Add a new question entry with the provided question and answer
+            val newQuestionEntry = mapOf("id" to "q$questionIndex", "question" to question, "answer" to answer)
+            questionsList.add(newQuestionEntry)
+        }
+        Log.i("AnswerAssessmentViewModel", "Questions list: $questionsList")
+    }
+
+    suspend fun collectAndSendSmartwatchData(timeInterval: String?): List<StressData?> {
+        val timeIntervalEnum = timeInterval?.let { mapDisplayValueToTimeInterval(it) }
+        val startTime = timeIntervalEnum?.let { getStartTimeForInterval(it) }!!
+        val endTime = ZonedDateTime.now().toInstant()
+        val hrvData = readHRVData(startTime, endTime)
+        val heartRateData = readHeartRateData(startTime, endTime)
         // Store data or perform necessary operations
 
-        Log.i("HealthConnect", "HRV Data: $hrvData")
-        Log.i("HealthConnect", "Heart Rate Data: $heartRateData")
+        val stressDataList = mutableListOf<StressData>()
+        hrvData?.let { stressDataList.add(StressData.HRVData(it)) }
+        heartRateData?.let { stressDataList.add(StressData.HRMetricsData(it)) }
+
         // Update the answer map with smartwatch data
-        return listOf(hrvData, heartRateData)
+        val collectedData = listOf(hrvData, heartRateData)
 
         // Notify that smartwatch data collection is complete
         _smartwatchDataCollected.value = true
 
+        // Log or send the collected data
+        Log.i("HealthConnect Test", collectedData.toString())
+
+        return stressDataList
     }
+
 
     suspend fun readSleepData(timeInterval: String?): List<SleepSessionData>? {
         Log.i("Time Interval", timeInterval.toString())
@@ -103,55 +139,36 @@ class AnswerAssessmentViewModel(
 
     suspend fun readExerciseSessionsData(timeInterval: String?): List<ExerciseSession> {
 
-        val startOfDay = ZonedDateTime.now().truncatedTo(ChronoUnit.DAYS)
-        val now = Instant.now()
+        val timeIntervalEnum = timeInterval?.let { mapDisplayValueToTimeInterval(it) }
+        val startTime = timeIntervalEnum?.let { getStartTimeForInterval(it) } !!
+        val endTime = ZonedDateTime.now().toInstant()
 
 
         sessionsList.value = healthConnectManager
-            .readExerciseSessions(startOfDay.toInstant(), now)
+            .readExerciseSessions(startTime, endTime)
             .map { record ->
                 val packageName = record.metadata.dataOrigin.packageName
                 ExerciseSession(
                     startTime = dateTimeWithOffsetOrDefault(record.startTime, record.startZoneOffset),
-                    endTime = dateTimeWithOffsetOrDefault(record.startTime, record.startZoneOffset),
+                    endTime = dateTimeWithOffsetOrDefault(record.endTime, record.endZoneOffset),
                     id = record.metadata.id,
                     sourceAppInfo = healthConnectCompatibleApps[packageName],
-                    title = record.title
+                    title = record.title,
+                    sessionData = healthConnectManager.readAssociatedSessionData(record.metadata.id)
                 )
             }
-        Log.i("Exercise Sessions", "Exercise Sessions: ")
-        sessionsList.value?.forEach { session ->
-            Log.i("Exercise Session", session.toString())
-        }
 
         return sessionsList.value
     }
 
-    private suspend fun readHRVdata(): List<HeartRateVariabilityData> {
+    private suspend fun readHRVData(startTime: Instant, endTime: Instant): List<HeartRateVariabilityData> {
         // Read HRV data from the device
-        val start = Instant.now().minus(7, ChronoUnit.DAYS)
-        val end = Instant.now()
-        return healthConnectManager.readHeartRateVariabilityRecord(start, end)
+        return healthConnectManager.readHeartRateVariabilityRecord(startTime, endTime)
     }
 
-    private suspend fun readHeartRateData(): List<HeartRateData> {
+    private suspend fun readHeartRateData(startTime: Instant, endTime: Instant): HeartRateMetrics? {
         // Read heart rate data from the device
-        val start = Instant.now().minus(7, ChronoUnit.DAYS)
-        val now = Instant.now()
-
-
-        return healthConnectManager.readHeartRateRecord(start, now)
-    }
-
-// Assuming you have the HeartRateRecord.Sample class
-
-    fun convertToHeartRateDataSample(samples: List<HeartRateRecord.Sample>): List<HeartRateDataSample> {
-        return samples.map { sample ->
-            HeartRateDataSample(
-                beatsPerMinute = sample.beatsPerMinute,
-                time = sample.time
-            )
-        }
+        return healthConnectManager.readHeartRateRecord(startTime, endTime)
     }
 
 
@@ -163,14 +180,51 @@ class AnswerAssessmentViewModel(
         timestamp: ZonedDateTime,
         frequency: String,
         answerMap: Map<Int, List<AnswerData>>,
+        questions: List<AssessmentSchema>
 
     ) {
+        val combinedAnswerList = answerMap.map { (questionIndex, answers) ->
+            val question = questions.getOrNull(questionIndex.toInt())
+            val questionId = question?.field ?: "Question not found"
+            val questionType = question?.type ?: "Unknown"
+            val questionText = question?.question ?: "Question not found"
+            val combinedAnswer = when (val answerData = answers.firstOrNull()) {
+                is AnswerData.Textual -> answerData.values.joinToString(", ")
+                is AnswerData.Stress -> answerData.data.joinToString(",") { it.toString() }
+                is AnswerData.Sleep -> answerData.data.joinToString(", ") { it.toString() }
+                is AnswerData.Exercise -> answerData.data.joinToString(", ") { it.toString() }
+                else -> {
+                    Log.e("AnswerAssessmentViewModel", "Unknown answer type: $answerData")
+                    ""}
+            }
+
+            mapOf(
+                "questionId" to questionId,
+                "questionType" to questionType,
+                "questionText" to questionText,
+                "answer" to combinedAnswer
+            )
+        }
+
+        Log.i("AnswerAssessmentViewModel", "Combined answer list: $combinedAnswerList")
+
+// Now combinedAnswerList holds a list of maps, each containing the desired information
+        combinedAnswerList.forEach { answerInfo ->
+            val questionId = answerInfo["questionId"]
+            val questionType = answerInfo["questionType"]
+            val questionText = answerInfo["questionText"]
+            val combinedAnswer = answerInfo["answer"]
+
+            // Send the questionId, questionType, questionText, and combinedAnswer as needed
+            println("Question ID: $questionId, Type: $questionType, Question: $questionText, Answer: $combinedAnswer")
+        }
+
 
         val questionAnswers = answerMap.map { (questionIndex, answers) ->
             val dynamicAnswers = answers.map { answerData ->
                 when (answerData) {
                     is AnswerData.Textual -> DynamicAnswerData("Textual", answerData.values.joinToString(", "))
-                    is AnswerData.Stress -> DynamicAnswerData("Stress", answerData.values.joinToString(", "))
+                    is AnswerData.Stress -> DynamicAnswerData("Stress", answerData.data)
                     is AnswerData.Sleep -> DynamicAnswerData("Sleep", answerData.data)
                     is AnswerData.Exercise -> DynamicAnswerData("Exercise", answerData.data)
 
@@ -210,6 +264,66 @@ class AnswerAssessmentViewModel(
 
         questionnaireReminderViewModel.insertReminder(questionnaireReminder)
 
+        // Convert combinedAnswerList to a list of questions, each represented as a map
+        val questionsList = combinedAnswerList.map { answerInfo ->
+            mapOf(
+                "id" to answerInfo["questionId"],
+                "questionType" to (answerInfo["questionType"] as QuestionEnum).name, // Convert enum to string
+                "question" to answerInfo["questionText"],
+                "answer" to answerInfo["answer"]
+            )
+        }
+
+        Log.i("AnswerAssessmentViewModel", "Questions list: $questionsList")
+
+        val questionsList1 = listOf(
+            mapOf(
+                "id" to "question1",
+                "questionType" to "input",
+                "question" to "How do you feel today?",
+                "answer" to "Good"
+            )
+        )
+
+        Log.i("AnswerAssessmentViewModel", "Questions list: $questionsList1")
+        val metadataMap = mapOf(
+            "submissionDate" to "2023-08-29",
+            "device" to "Android"
+        )
+
+        val formDataMap = mapOf(
+            "questions" to questionsList,
+            "metadata" to metadataMap
+        )
+
+        val inputData = AssessmentResponseInput(
+            assessmentID = Optional.Present(assessmentId),
+            formData = Optional.Present(formDataMap)
+        )
+
+        Log.i("AnswerAssessmentViewModel", "Input data: $inputData")
+
+        viewModelScope.launch {
+            try {
+                val response =
+                    apolloClient.mutate(ASSESSMENTS_SUBMITMutation(data = inputData)).execute()
+
+                if (response.hasErrors()) {
+                    // Handle GraphQL errors. This could be logging, showing a message to the user, etc.
+                    val errors = response.errors?.joinToString(", ") { it.message }
+                    Log.e("GraphQL", "Errors: $errors")
+                } else {
+                    // Optionally handle successful response if you need to extract or log data.
+                    // ...
+                    Log.i("GraphQL", "Success: ${response.data}")
+                    // Update UI state to submitted
+                    uiState.value = AnswerAssessmentUiState.Submitted
+                }
+            } catch (e: ApolloException) {
+                // Handle the exception, which can arise from network issues, server issues, etc.
+                Log.e("GraphQL", "Failed to submit data", e)
+            }
+        }
         uiState.value = AnswerAssessmentUiState.Submitted
     }
 

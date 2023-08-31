@@ -50,7 +50,7 @@ fun AssessmentCard(
             Icon(
                 when (assessment.assessmentType) {
                     AssessmentTypeEnum.stress -> Icons.Default.Mood
-                    AssessmentTypeEnum.mental_health -> Icons.Default.Accessibility
+                    AssessmentTypeEnum.sleep -> Icons.Default.Accessibility
                     AssessmentTypeEnum.physical_health -> Icons.Default.FitnessCenter
                     else -> {
                         Icons.Default.Mood  }
@@ -105,7 +105,7 @@ fun AssessmentCard(
 private fun getFormattedType(assessmentType: AssessmentTypeEnum?): String {
     return when (assessmentType) {
         AssessmentTypeEnum.stress -> "Stress"
-        AssessmentTypeEnum.mental_health -> "Mental health"
+        AssessmentTypeEnum.sleep -> "Sleep"
         AssessmentTypeEnum.physical_health -> "Physical health"
         else -> "Unknown Type" // Add a default value for unrecognized types, if needed.
     }
@@ -114,7 +114,7 @@ private fun getFormattedType(assessmentType: AssessmentTypeEnum?): String {
 private fun getColorForType(assessmentType: AssessmentTypeEnum?): Color {
     return when (assessmentType) {
         AssessmentTypeEnum.stress -> Color(0xFF86C6E5) // Blue with alpha FF (full opacity)
-        AssessmentTypeEnum.mental_health -> Color(0xFF8BC34A) // Green with alpha FF (full opacity)
+        AssessmentTypeEnum.sleep -> Color(0xFF8BC34A) // Green with alpha FF (full opacity)
         AssessmentTypeEnum.physical_health -> Color(0xFFE1BEE7) // Lavender with alpha FF (full opacity)
         else -> Color.Gray // Default color for unrecognized types
     }

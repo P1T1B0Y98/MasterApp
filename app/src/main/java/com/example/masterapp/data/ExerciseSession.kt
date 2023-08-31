@@ -10,5 +10,6 @@ data class ExerciseSession(
     val endTime: ZonedDateTime,
     val id: String,
     val title: String?,
-    val sourceAppInfo: MasterAppInfo?
+    val sourceAppInfo: MasterAppInfo?,
+    val sessionData: ExerciseSessionData
 )

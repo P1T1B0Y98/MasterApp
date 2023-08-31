@@ -198,6 +198,7 @@ fun AppNavigator(
                     answerViewModel = answerViewModel,
                     sharedViewModel = sharedViewModel,
                     questionnaireReminderViewModel = questionnaireReminderViewModel,
+                    apolloClient = apolloClient
             ))
 
             // Pass the viewModel to the AssessmentPage composable

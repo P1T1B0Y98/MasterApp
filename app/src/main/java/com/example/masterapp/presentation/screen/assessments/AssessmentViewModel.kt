@@ -79,7 +79,6 @@ class AssessmentViewModel(
     ) {
 
         val allAssessments = getAssessmentsList(filter, limit, offset, orderBy)
-
         assessmentPair = allAssessments?.let { categorizeAssessments(userId, it) }
         uiState = UiState.PermissionsAccepted
     }
@@ -193,7 +192,7 @@ class AssessmentViewModel(
             }
 
             // If current time is greater than or equal to the notificationTimestamp, then the user can take the questionnaire again
-            return System.currentTimeMillis() <= it.notificationTimestamp
+            return false
         }
 
         return false

@@ -140,7 +140,7 @@
     <string name="answer_assessment_screen">Answer</string>
     <string name="next_question">Next</string>
     <string name="permissions_title">Welcome to HealthPulse</string>
-    <string name="user_profile_screen">Profile</string>
+    <string name="user_profile_screen">My Account</string>
     <string name="submit_answers">Submit</string>
     <string name="results_screen">Results</string>
     <string name="health_connect_button_label">Open Health Connect</string>

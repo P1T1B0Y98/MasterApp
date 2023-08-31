@@ -25,7 +25,9 @@ import androidx.health.connect.client.records.SpeedRecord
 import androidx.health.connect.client.records.StepsRecord
 import androidx.health.connect.client.records.TotalCaloriesBurnedRecord
 import androidx.health.connect.client.records.WeightRecord
+import androidx.health.connect.client.request.AggregateGroupByPeriodRequest
 import androidx.health.connect.client.request.AggregateRequest
+
 import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
 import androidx.health.connect.client.units.Mass
@@ -37,6 +39,8 @@ import java.time.Instant
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 import kotlinx.coroutines.flow.Flow
+import java.time.LocalDateTime
+import java.time.Period
 import kotlin.random.Random
 
 // The minimum android level that can use Health Connect
@@ -193,6 +197,22 @@ class HealthConnectManager(val context: Context) {
                 )
                 .records
 
+            val sleepStageDataList = mutableListOf<SleepStageData>() // Create an empty mutable list to store SleepStageData objects.
+
+            for (stageRecord in sleepStageRecords) {
+                val stageData = SleepStageData(
+                    stage = getStageConstantName(stageRecord.stage),
+                    startTime = stageRecord.startTime,
+                    endTime = stageRecord.endTime,
+                    duration = Duration.between(stageRecord.startTime, stageRecord.endTime),
+                    metadata = stageRecord.metadata
+                )
+                sleepStageDataList.add(stageData) // Add the created SleepStageData object to the list.
+
+                Log.i("Sleep Stage Data Record", stageData.toString())
+            }
+
+
             val sleepSessionData = SleepSessionData(
                 uid = sleepRecord.metadata.id,
                 title = sleepRecord.title,
@@ -202,15 +222,26 @@ class HealthConnectManager(val context: Context) {
                 endTime = sleepRecord.endTime,
                 endZoneOffset = sleepRecord.endZoneOffset,
                 duration = Duration.between(sleepRecord.startTime, sleepRecord.endTime),
-                stages = sleepStageRecords
+                stages = sleepStageDataList
             )
 
             sleepSessionDataList.add(sleepSessionData)
 
             for (stageRecord in sleepStageRecords) {
-                Log.i("Sleep Stage Record", stageRecord.toString())
+                val stageData = SleepStageData(
+                    stage = getStageConstantName(stageRecord.stage),
+                    startTime = stageRecord.startTime,
+                    endTime = stageRecord.endTime,
+                    duration = Duration.between(stageRecord.startTime, stageRecord.endTime),
+                    metadata = stageRecord.metadata
+                )
+                Log.i("Sleep Stage Data Record", stageData.toString())
             }
+
+
         }
+
+        Log.i("Sleep session data List" , sleepSessionDataList.toString())
 
         return sleepSessionDataList
     }
@@ -234,29 +265,36 @@ class HealthConnectManager(val context: Context) {
     }
 
 
-    suspend fun readHeartRateRecord(start: Instant, end: Instant): List<HeartRateData> {
+    suspend fun readHeartRateRecord(start: Instant, end: Instant): HeartRateMetrics? {
         val request = ReadRecordsRequest(
             recordType = HeartRateRecord::class,
             timeRangeFilter = TimeRangeFilter.between(start, end)
         )
         val response = healthConnectClient.readRecords(request)
 
-        return response.records.map { record ->
-            HeartRateData(
-                id = record.metadata.id,
-                startTime = record.startTime,
-                endTime = record.endTime,
-                samples = record.samples.map { sample ->
-                    HeartRateDataSample(
-                        beatsPerMinute = sample.beatsPerMinute,
-                        time = sample.time
-                    )
-                },
-                sourceAppInfo = healthConnectCompatibleApps[record.metadata.dataOrigin.packageName]
-            )
-        }
-    }
+        val req = AggregateRequest(
+            metrics = setOf(
+                HeartRateRecord.BPM_AVG,
+                HeartRateRecord.BPM_MAX,
+                HeartRateRecord.BPM_MIN,
+                HeartRateRecord.MEASUREMENTS_COUNT
+            ),
+            timeRangeFilter = TimeRangeFilter.between(start, end)
+        )
+        val resp = healthConnectClient.aggregate(req)
 
+        return HeartRateMetrics(
+            name = "Heart Rate Metrics",
+            startTime = start.toString(),
+            endTime = end.toString(),
+            bpmMax = resp[HeartRateRecord.BPM_MAX]!!,
+            bpmMin = resp[HeartRateRecord.BPM_MIN]!!,
+            bpmAvg = resp[HeartRateRecord.BPM_AVG]!!,
+            measurementCount = resp[HeartRateRecord.MEASUREMENTS_COUNT]!!,
+            sourceAppInfo = healthConnectCompatibleApps[response.records[0].metadata.dataOrigin.packageName]
+        )
+
+    }
 
     suspend fun readExerciseSessions(start: Instant, end: Instant): List<ExerciseSessionRecord> {
         val request = ReadRecordsRequest(
@@ -264,6 +302,7 @@ class HealthConnectManager(val context: Context) {
             timeRangeFilter = TimeRangeFilter.between(start, end)
         )
         val response = healthConnectClient.readRecords(request)
+        Log.i("Exercise Sessions", response.records.toString())
         return response.records
     }
 
@@ -289,7 +328,7 @@ class HealthConnectManager(val context: Context) {
             HeartRateRecord.BPM_MIN,
             SpeedRecord.SPEED_AVG,
             SpeedRecord.SPEED_MAX,
-            SpeedRecord.SPEED_MIN
+            SpeedRecord.SPEED_MIN,
         )
         // Limit the data read to just the application that wrote the session. This may or may not
         // be desirable depending on the use case: In some cases, it may be useful to combine with
@@ -302,8 +341,6 @@ class HealthConnectManager(val context: Context) {
         )
         val aggregateData = healthConnectClient.aggregate(aggregateRequest)
         val speedData = readData<SpeedRecord>(timeRangeFilter, dataOriginFilter)
-        val heartRateData = readData<HeartRateRecord>(timeRangeFilter, dataOriginFilter)
-
         return ExerciseSessionData(
             uid = uid,
             totalActiveTime = aggregateData[ExerciseSessionRecord.EXERCISE_DURATION_TOTAL],
@@ -313,8 +350,6 @@ class HealthConnectManager(val context: Context) {
             minHeartRate = aggregateData[HeartRateRecord.BPM_MIN],
             maxHeartRate = aggregateData[HeartRateRecord.BPM_MAX],
             avgHeartRate = aggregateData[HeartRateRecord.BPM_AVG],
-            heartRateSeries = heartRateData,
-            speedRecord = speedData,
             minSpeed = aggregateData[SpeedRecord.SPEED_MIN],
             maxSpeed = aggregateData[SpeedRecord.SPEED_MAX],
             avgSpeed = aggregateData[SpeedRecord.SPEED_AVG],

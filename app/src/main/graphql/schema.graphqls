@@ -162,7 +162,7 @@ type Assessment {
 
 enum AssessmentTypeEnum {
     stress
-    mental_health
+    sleep
     physical_health
 }
 
@@ -1126,6 +1126,18 @@ type AssignmentResponse {
     createdBy: User
 }
 
+type AssessmentResponse {
+    id: String!
+
+    assessmentID: [Assessment!]
+
+    formData: JSON
+
+    createdAt: DateTime
+
+    createdBy: User
+}
+
 type Mutation {
     iamEdit("" data: IamEditInput!): Boolean
 
@@ -1210,6 +1222,8 @@ type Mutation {
     taxonomyImport("" data: TaxonomyInput!, "" importHash: String!): Boolean
 
     assignmentResponseCreate("" data: assignmentResponseInput!): AssignmentResponse!
+
+    assessmentResponseCreate("" data: assessmentResponseInput!): AssessmentResponse!
 }
 
 input IamEditInput {
@@ -1480,6 +1494,12 @@ input TaxonomyInput {
 
 input assignmentResponseInput {
     assignmentID: String
+
+    formData: JSON
+}
+
+input assessmentResponseInput {
+    assessmentID: String
 
     formData: JSON
 }

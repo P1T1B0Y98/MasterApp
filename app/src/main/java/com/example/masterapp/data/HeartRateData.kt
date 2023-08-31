@@ -17,3 +17,4 @@ data class HeartRateDataSample(
     val beatsPerMinute: Long,
     val time: Instant
 )
+
