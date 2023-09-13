@@ -34,6 +34,7 @@ import com.example.masterapp.data.Assessment
 import com.example.masterapp.data.HealthConnectManager
 import com.example.masterapp.presentation.component.NoQuestionnairesContent
 import com.example.masterapp.presentation.navigation.Screen
+import com.example.masterapp.presentation.screen.LoadingScreen
 import com.example.masterapp.presentation.screen.SharedViewModel
 
 @Composable
@@ -54,18 +55,7 @@ fun AssessmentPage(
     ) {
         when (viewModel.uiState) {
             UiState.Loading -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    // This can be a CircularProgressIndicator or some other loading indicator
-                    CircularProgressIndicator()
-                }
-                Text(
-                    text = "Retrieving questionnaires...",
-                    fontSize = 24.sp,
-                    color = MaterialTheme.colors.primary,
-                    textAlign = TextAlign.Center)
+                LoadingScreen()
             }
             UiState.PermissionsAccepted -> {
 

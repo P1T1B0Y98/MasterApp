@@ -1,6 +1,9 @@
 package com.example.masterapp.presentation.screen.answerassessment
 
 import android.util.Log
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationVector1D
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.health.connect.client.permission.HealthPermission
@@ -15,32 +18,34 @@ import com.example.masterapp.ASSESSMENTS_SUBMITMutation
 import com.example.masterapp.data.AnswerData
 import com.example.masterapp.data.Assessment
 import com.example.masterapp.data.AssessmentSchema
-import com.example.masterapp.data.DynamicAnswerData
 import com.example.masterapp.data.EncryptionHelper
-import com.example.masterapp.data.EncryptionHelper.getSecretKey
 import com.example.masterapp.data.ExerciseSession
+import com.example.masterapp.data.FormData
 import com.example.masterapp.data.HealthConnectManager
 import com.example.masterapp.data.HeartRateMetrics
 import com.example.masterapp.data.HeartRateVariabilityData
+import com.example.masterapp.data.Metadatas
+import com.example.masterapp.data.QuestionData
 import com.example.masterapp.data.SleepSessionData
 import com.example.masterapp.data.StressData
 import com.example.masterapp.data.dateTimeWithOffsetOrDefault
-import com.example.masterapp.data.roomDatabase.Answer
 import com.example.masterapp.data.roomDatabase.AnswerViewModel
-import com.example.masterapp.data.roomDatabase.QuestionAnswer
-import com.example.masterapp.data.roomDatabase.QuestionnaireReminder
 import com.example.masterapp.data.roomDatabase.QuestionnaireReminderViewModel
 import com.example.masterapp.presentation.screen.SharedViewModel
 import com.example.masterapp.type.AssessmentResponseInput
-import com.example.masterapp.type.QuestionEnum
-import com.google.gson.Gson
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import java.io.ByteArrayOutputStream
 import java.time.Instant
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
+import java.util.zip.GZIPOutputStream
+
+
 
 
 class AnswerAssessmentViewModel(
@@ -105,10 +110,12 @@ class AnswerAssessmentViewModel(
         Log.i("AnswerAssessmentViewModel", "Questions list: $questionsList")
     }
 
-    suspend fun collectAndSendSmartwatchData(timeInterval: String?): List<StressData?> {
+    suspend fun collectAndSendSmartwatchData(timeInterval: String?): StressData? {
         val timeIntervalEnum = timeInterval?.let { mapDisplayValueToTimeInterval(it) }
         val startTime = timeIntervalEnum?.let { getStartTimeForInterval(it) }!!
+        Log.i("StartTime", startTime.toString())
         val endTime = ZonedDateTime.now().toInstant()
+        Log.i("EndTime", endTime.toString())
         val hrvData = readHRVData(startTime, endTime)
         val heartRateData = readHeartRateData(startTime, endTime)
         // Store data or perform necessary operations
@@ -126,7 +133,7 @@ class AnswerAssessmentViewModel(
         // Log or send the collected data
         Log.i("HealthConnect Test", collectedData.toString())
 
-        return stressDataList
+        return heartRateData?.let { StressData.HRVAndHRMetricsData(hrvData, it) }
     }
 
 
@@ -144,7 +151,6 @@ class AnswerAssessmentViewModel(
         val startTime = timeIntervalEnum?.let { getStartTimeForInterval(it) } !!
         val endTime = ZonedDateTime.now().toInstant()
 
-
         sessionsList.value = healthConnectManager
             .readExerciseSessions(startTime, endTime)
             .map { record ->
@@ -152,15 +158,90 @@ class AnswerAssessmentViewModel(
                 ExerciseSession(
                     startTime = dateTimeWithOffsetOrDefault(record.startTime, record.startZoneOffset),
                     endTime = dateTimeWithOffsetOrDefault(record.endTime, record.endZoneOffset),
+                    typeOfExercise = getExerciseTypeConstantName(record.exerciseType),
                     id = record.metadata.id,
                     sourceAppInfo = healthConnectCompatibleApps[packageName],
-                    title = record.title,
                     sessionData = healthConnectManager.readAssociatedSessionData(record.metadata.id)
                 )
             }
 
         return sessionsList.value
     }
+
+    fun animateCardOffScreen(yOffset: Animatable<Float, AnimationVector1D>, onAnimationEnd: () -> Unit = {}) {
+        viewModelScope.launch {
+            yOffset.animateTo(targetValue = -2000f, animationSpec = tween(durationMillis = 500))
+            onAnimationEnd()
+        }
+    }
+
+
+    private fun getExerciseTypeConstantName(exerciseType: Int): String? {
+        return when (exerciseType) {
+            2 -> "EXERCISE_TYPE_BADMINTON"
+            4 -> "EXERCISE_TYPE_BASEBALL"
+            5 -> "EXERCISE_TYPE_BASKETBALL"
+            8 -> "EXERCISE_TYPE_BIKING"
+            9 -> "EXERCISE_TYPE_BIKING_STATIONARY"
+            10 -> "EXERCISE_TYPE_BOOT_CAMP"
+            11 -> "EXERCISE_TYPE_BOXING"
+            13 -> "EXERCISE_TYPE_CALISTHENICS"
+            14 -> "EXERCISE_TYPE_CRICKET"
+            16 -> "EXERCISE_TYPE_DANCING"
+            25 -> "EXERCISE_TYPE_ELLIPTICAL"
+            26 -> "EXERCISE_TYPE_EXERCISE_CLASS"
+            27 -> "EXERCISE_TYPE_FENCING"
+            28 -> "EXERCISE_TYPE_FOOTBALL_AMERICAN"
+            29 -> "EXERCISE_TYPE_FOOTBALL_AUSTRALIAN"
+            31 -> "EXERCISE_TYPE_FRISBEE_DISC"
+            32 -> "EXERCISE_TYPE_GOLF"
+            33 -> "EXERCISE_TYPE_GUIDED_BREATHING"
+            34 -> "EXERCISE_TYPE_GYMNASTICS"
+            35 -> "EXERCISE_TYPE_HANDBALL"
+            36 -> "EXERCISE_TYPE_HIGH_INTENSITY_INTERVAL_TRAINING"
+            37 -> "EXERCISE_TYPE_HIKING"
+            38 -> "EXERCISE_TYPE_ICE_HOCKEY"
+            39 -> "EXERCISE_TYPE_ICE_SKATING"
+            44 -> "EXERCISE_TYPE_MARTIAL_ARTS"
+            46 -> "EXERCISE_TYPE_PADDLING"
+            47 -> "EXERCISE_TYPE_PARAGLIDING"
+            48 -> "EXERCISE_TYPE_PILATES"
+            50 -> "EXERCISE_TYPE_RACQUETBALL"
+            51 -> "EXERCISE_TYPE_ROCK_CLIMBING"
+            52 -> "EXERCISE_TYPE_ROLLER_HOCKEY"
+            53 -> "EXERCISE_TYPE_ROWING"
+            54 -> "EXERCISE_TYPE_ROWING_MACHINE"
+            55 -> "EXERCISE_TYPE_RUGBY"
+            56 -> "EXERCISE_TYPE_RUNNING"
+            57 -> "EXERCISE_TYPE_RUNNING_TREADMILL"
+            58 -> "EXERCISE_TYPE_SAILING"
+            59 -> "EXERCISE_TYPE_SCUBA_DIVING"
+            60 -> "EXERCISE_TYPE_SKATING"
+            61 -> "EXERCISE_TYPE_SKIING"
+            62 -> "EXERCISE_TYPE_SNOWBOARDING"
+            63 -> "EXERCISE_TYPE_SNOWSHOEING"
+            64 -> "EXERCISE_TYPE_SOCCER"
+            65 -> "EXERCISE_TYPE_SOFTBALL"
+            66 -> "EXERCISE_TYPE_SQUASH"
+            68 -> "EXERCISE_TYPE_STAIR_CLIMBING"
+            69 -> "EXERCISE_TYPE_STAIR_CLIMBING_MACHINE"
+            70 -> "EXERCISE_TYPE_STRENGTH_TRAINING"
+            71 -> "EXERCISE_TYPE_STRETCHING"
+            72 -> "EXERCISE_TYPE_SURFING"
+            73 -> "EXERCISE_TYPE_SWIMMING_OPEN_WATER"
+            74 -> "EXERCISE_TYPE_SWIMMING_POOL"
+            75 -> "EXERCISE_TYPE_TABLE_TENNIS"
+            76 -> "EXERCISE_TYPE_TENNIS"
+            78 -> "EXERCISE_TYPE_VOLLEYBALL"
+            79 -> "EXERCISE_TYPE_WALKING"
+            80 -> "EXERCISE_TYPE_WATER_POLO"
+            81 -> "EXERCISE_TYPE_WEIGHTLIFTING"
+            82 -> "EXERCISE_TYPE_WHEELCHAIR"
+            83 -> "EXERCISE_TYPE_YOGA"
+            else -> "EXERCISE_TYPE_UNKNOWN"
+        }
+    }
+
 
     private suspend fun readHRVData(startTime: Instant, endTime: Instant): List<HeartRateVariabilityData> {
         // Read HRV data from the device
@@ -182,165 +263,86 @@ class AnswerAssessmentViewModel(
         frequency: String,
         answerMap: Map<Int, List<AnswerData>>,
         questions: List<AssessmentSchema>
-
     ) {
-        val combinedAnswerList = answerMap.map { (questionIndex, answers) ->
-            val question = questions.getOrNull(questionIndex.toInt())
+
+        Log.i("AnswerMap", answerMap.toString())
+        val questionsList = answerMap.map { (questionIndex, answers) ->
+            Log.i("Answers", answers.toString())
+            val question = questions.getOrNull(questionIndex)
             val questionId = question?.field ?: "Question not found"
-            val questionType = question?.type ?: "Unknown"
+            val questionType = question?.type?.name ?: "Unknown"
             val questionText = question?.question ?: "Question not found"
-            val combinedAnswer = when (val answerData = answers.firstOrNull()) {
-                is AnswerData.Textual -> answerData.values.joinToString(", ")
-                is AnswerData.Stress -> answerData.data.joinToString(",") { it.toString() }
-                is AnswerData.Sleep -> answerData.data.joinToString(", ") { it.toString() }
-                is AnswerData.Exercise -> answerData.data.joinToString(", ") { it.toString() }
-                else -> {
-                    Log.e("AnswerAssessmentViewModel", "Unknown answer type: $answerData")
-                    ""}
-            }
 
-            mapOf(
-                "questionId" to questionId,
-                "questionType" to questionType,
-                "questionText" to questionText,
-                "answer" to combinedAnswer
+            QuestionData(
+                id = questionId,
+                questionType = questionType,
+                question = questionText,
+                answer = answers
             )
         }
 
-        Log.i("AnswerAssessmentViewModel", "Combined answer list: $combinedAnswerList")
-
-// Now combinedAnswerList holds a list of maps, each containing the desired information
-        combinedAnswerList.forEach { answerInfo ->
-            val questionId = answerInfo["questionId"]
-            val questionType = answerInfo["questionType"]
-            val questionText = answerInfo["questionText"]
-            val combinedAnswer = answerInfo["answer"]
-
-            // Send the questionId, questionType, questionText, and combinedAnswer as needed
-            println("Question ID: $questionId, Type: $questionType, Question: $questionText, Answer: $combinedAnswer")
-        }
-
-
-        val questionAnswers = answerMap.map { (questionIndex, answers) ->
-            val dynamicAnswers = answers.map { answerData ->
-                when (answerData) {
-                    is AnswerData.Textual -> DynamicAnswerData("Textual", answerData.values.joinToString(", "))
-                    is AnswerData.Stress -> DynamicAnswerData("Stress", answerData.data)
-                    is AnswerData.Sleep -> DynamicAnswerData("Sleep", answerData.data)
-                    is AnswerData.Exercise -> DynamicAnswerData("Exercise", answerData.data)
-
-                    else -> null
-                }
-            }.filterNotNull()
-
-            Log.i("AnswerAssessmentViewModel", "Dynamic answers for question $questionIndex: $dynamicAnswers")
-
-            QuestionAnswer(
-                questionId = questionIndex,
-                answers = dynamicAnswers
-            )
-        }
-
-
-        val answer = Answer(
-            userId = userId,
-            assessmentId = assessmentId,
-            assessmentTitle = assessmentTitle,
-            assessmentType = assessmentType,
-            timestamp = timestamp.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")),
-            questionAnswers = questionAnswers
-        )
-        Log.i("AnswerAssessmentViewModel", "Adding answer to database: $answer")
-        // Assuming you have a repository or database instance, save the answer
-        // Replace 'yourRepository' with your actual database or repository instance
-        answerViewModel.insertAnswer(answer)
-
-        val futureNotification = getTimeForNotification(frequency, timestamp.toInstant().toEpochMilli())
-        val questionnaireReminder = QuestionnaireReminder(
-            userId = userId,
-            questionnaireId = assessmentId,
-            completedTimestamp = timestamp.toInstant().toEpochMilli(),
-            notificationTimestamp = futureNotification
+        val metadata = Metadatas(
+            submissionDate = timestamp.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
+            device = "Android"
         )
 
-        questionnaireReminderViewModel.insertReminder(questionnaireReminder)
-
-        // Convert combinedAnswerList to a list of questions, each represented as a map
-        val questionsList = combinedAnswerList.map { answerInfo ->
-            mapOf(
-                "id" to answerInfo["questionId"],
-                "questionType" to (answerInfo["questionType"] as QuestionEnum).name, // Convert enum to string
-                "question" to answerInfo["questionText"],
-                "answer" to answerInfo["answer"]
-            )
-        }
-
-        Log.i("AnswerAssessmentViewModel", "Questions list: $questionsList")
-
-        val questionsList1 = listOf(
-            mapOf(
-                "id" to "question1",
-                "questionType" to "input",
-                "question" to "How do you feel today?",
-                "answer" to "Good"
-            )
+        val formData = FormData(
+            questions = questionsList,
+            metadata = metadata
         )
 
-        Log.i("AnswerAssessmentViewModel", "Questions list: $questionsList1")
-        val metadataMap = mapOf(
-            "submissionDate" to "2023-08-29",
-            "device" to "Android"
-        )
+        Log.i("AnswerAssessmentViewModel", "formData: $formData")
 
-        val formDataMap = mapOf(
-            "questions" to questionsList,
-            "metadata" to metadataMap
-        )
+        // Convert formData to a JSON string
+        val serializedFormData = Json.encodeToString(formData)
 
-        val inputData = AssessmentResponseInput(
-            assessmentID = Optional.Present(assessmentId),
-            formData = Optional.Present(formDataMap)
-        )
+        Log.i("AnswerAssessmentViewModel", "formDataMap: $formData")
 
-        val formDatas = inputData.formData
-        Log.i("Input data", "Input data: $formDatas")
+        // Convert formDataMap to a JSON string
 
-// Assuming inputData.formData is a String. If not, convert it to String before encrypting.
-        val serializedFormData = Gson().toJson(formDataMap)
-        val encryptedFormData = EncryptionHelper.encrypt(serializedFormData, "wilshere")
+        // Compress the serializedFormData using GZIP
+        val compressedFormData = compressStringToGZIP(serializedFormData)
 
-        Log.i("SerializedFormData", serializedFormData)
-// Now use encryptedFormData for your mutation.
+        // Convert the compressed data to a base64 encoded string
+        val base64CompressedFormData = android.util.Base64.encodeToString(compressedFormData, android.util.Base64.DEFAULT)
+
+        // Encrypt the base64 encoded compressed data
+        val encryptedFormData = EncryptionHelper.encrypt(base64CompressedFormData)
+
+        // Now use encryptedFormData for your mutation
+
         val encryptedInput = AssessmentResponseInput(
-            assessmentID = inputData.assessmentID,
+            assessmentID = Optional.Present(assessmentId),
             formData = Optional.Present(encryptedFormData)
         )
 
-        Log.i("AnswerAssessmentViewModel", "Input data: $encryptedInput")
+        Log.i("SerializedFormData", serializedFormData)
+        Log.i("AnswerAssessmentViewModel", "Input data encrypted: $encryptedInput")
 
         viewModelScope.launch {
             try {
                 val response =
                     apolloClient.mutate(ASSESSMENTS_SUBMITMutation(data = encryptedInput)).execute()
-
+                Log.i("GraphQL", "Response: $response")
                 if (response.hasErrors()) {
-                    // Handle GraphQL errors. This could be logging, showing a message to the user, etc.
+                    // Handle GraphQL errors
                     val errors = response.errors?.joinToString(", ") { it.message }
                     Log.e("GraphQL", "Errors: $errors")
                 } else {
-                    // Optionally handle successful response if you need to extract or log data.
-                    // ...
+                    // Handle successful response
                     Log.i("GraphQL", "Success: ${response.data}")
                     // Update UI state to submitted
                     uiState.value = AnswerAssessmentUiState.Submitted
                 }
             } catch (e: ApolloException) {
-                // Handle the exception, which can arise from network issues, server issues, etc.
+                // Handle the exception
                 Log.e("GraphQL", "Failed to submit data", e)
             }
         }
         uiState.value = AnswerAssessmentUiState.Submitted
     }
+
+
 
     private fun getTimeForNotification(frequency: String, timestamp: Long): Long {
         val time = when (frequency) {
@@ -366,6 +368,12 @@ class AnswerAssessmentViewModel(
             TimeInterval.ONE_MONTH -> ZonedDateTime.now().minus(1, ChronoUnit.MONTHS).toInstant()
         }
     }
+}
+
+fun compressStringToGZIP(data: String): ByteArray {
+    val bos = ByteArrayOutputStream(data.length)
+    GZIPOutputStream(bos).bufferedWriter(Charsets.UTF_8).use { it.write(data) }
+    return bos.toByteArray()
 }
 
 enum class TimeInterval(val displayValue: String) {

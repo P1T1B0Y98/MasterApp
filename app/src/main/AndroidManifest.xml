@@ -29,7 +29,8 @@
         <activity
             android:name="com.example.masterapp.presentation.MainActivity"
             android:exported="true"
-            android:theme="@style/Theme.MasterApp">
+            android:windowSoftInputMode="adjustNothing"
+        android:theme="@style/Theme.MasterApp">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

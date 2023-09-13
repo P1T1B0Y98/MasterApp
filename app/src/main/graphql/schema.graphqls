@@ -74,6 +74,9 @@ type Query {
     taxonomyAutocomplete("" query: String, "" limit: Int): [AutocompleteOption!]!
 
     assignmentResponseList("" limit: Int, "" offset: Int, "" orderBy: AssignmentsOrderByEnum): assignmentResponsePage!
+
+    assessmentResponseListByUserID(userID: ID!, limit: Int, offset: Int): assessmentResponsePage!
+
 }
 
 input AssessmentsFilterInput {
@@ -1111,6 +1114,11 @@ type TaxonomyPage {
 type assignmentResponsePage {
     rows: [AssignmentResponse!]!
 
+    count: Int!
+}
+
+type assessmentResponsePage {
+    rows: [AssessmentResponse!]!
     count: Int!
 }
 

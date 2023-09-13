@@ -8,6 +8,7 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
+import com.example.masterapp.presentation.screen.LoadingScreen
 
 @Composable
 fun ResultsScreen(
@@ -20,7 +21,7 @@ fun ResultsScreen(
     when (currentState) {
         is ResultsViewModel.ResultsUiState.Loading -> {
             // Display a loading indicator while loading the assessment
-            Text(text = "Loading results...", color = Color.Black)
+            LoadingScreen()
 
         }
         is ResultsViewModel.ResultsUiState.Success -> {
@@ -40,8 +41,8 @@ fun ResultsScreen(
             // Display a success message if the assessment answers were submitted successfully
             val answer = (viewModel.uiState.value
                     as ResultsViewModel.ResultsUiState.Detailed).answer
-            Log.i("ResultsScreen", "Attempting to display detailed results for answer: ${answer.assessmentTitle}")
             val navController = rememberNavController()
+            Log.i("ResultsScreen", answer.toString())
             DetailedResult(answer = answer) {
                 viewModel.goBack()
             }

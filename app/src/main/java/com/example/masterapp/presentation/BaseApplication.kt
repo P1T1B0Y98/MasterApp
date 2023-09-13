@@ -51,12 +51,6 @@ class BaseApplication : Application() {
             .build()
         scheduleNotification()
         preferencesHelper = PreferencesHelper(this)
-        // Generate and store the secret key
-        val secretKeyAlias = "Wilshere" // Set an alias for the secret key
-        val secretKey = EncryptionHelper.generateSecretKey(secretKeyAlias)
-        val keyStore = KeyStore.getInstance("AndroidKeyStore")
-        keyStore.load(null)
-        keyStore.setEntry(secretKeyAlias, KeyStore.SecretKeyEntry(secretKey), null)
     }
 
     private fun getServerUrlFromWifi(): String {

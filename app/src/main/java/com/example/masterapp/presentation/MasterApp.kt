@@ -110,7 +110,8 @@ fun MasterApp(
                             // This is a placeholder space to keep symmetry. It matches the size of the IconButton.
                             Spacer(modifier = Modifier.size(48.dp))
                         }
-                    }
+                    },
+                    elevation = 0.dp,
                 )
             },
             drawerContent = {
@@ -125,7 +126,8 @@ fun MasterApp(
             },
             snackbarHost = {
                 SnackbarHost(it) { data -> Snackbar(snackbarData = data) }
-            }
+            },
+
         ) {
             AppNavigator(
                 healthConnectManager = healthConnectManager,

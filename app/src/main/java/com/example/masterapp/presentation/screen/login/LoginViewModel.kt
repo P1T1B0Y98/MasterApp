@@ -7,7 +7,6 @@ import com.apollographql.apollo3.ApolloClient
 import com.apollographql.apollo3.exception.ApolloException
 import com.example.masterapp.AUTH_MEQuery
 import com.example.masterapp.AUTH_SIGN_INMutation
-import com.example.masterapp.presentation.screen.SharedViewModel
 
 class LoginViewModel(
     private val apolloClient: ApolloClient) : ViewModel() {

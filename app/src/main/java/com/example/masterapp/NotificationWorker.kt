@@ -1,22 +1,19 @@
 package com.example.masterapp
 
 import AuthManager
-import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
 import android.net.Uri
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.work.CoroutineWorker
-import androidx.work.Worker
 import androidx.work.WorkerParameters
 import com.example.masterapp.data.roomDatabase.AnswerDatabase
 import com.example.masterapp.data.roomDatabase.QuestionnaireReminder
 import com.example.masterapp.data.roomDatabase.QuestionnaireReminderDao
-import com.example.masterapp.type.AssessmentsPage
+import com.example.masterapp.presentation.MainActivity
 
 class NotificationWorker(appContext: Context, workerParams: WorkerParameters)
     : CoroutineWorker(appContext, workerParams) {
@@ -31,14 +28,17 @@ class NotificationWorker(appContext: Context, workerParams: WorkerParameters)
     private suspend fun retrieveAllEntries(): List<QuestionnaireReminder> {
         return questionnaireReminderDao.getRemindersForUser(AuthManager.getUserId()) // replace USER_ID with the appropriate user id
     }
-    private fun sendNotification() {
-        // Intent with the deep link URI
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("myapp://assessments"))
-        val pendingIntent: PendingIntent = PendingIntent.getActivity(applicationContext, 0, intent, 0)
+    private fun sendNotification(deepLinkUri: Uri) {
+        val intent = Intent(applicationContext, MainActivity::class.java)
+        intent.action = Intent.ACTION_VIEW
+        intent.data = deepLinkUri
+
+        val pendingIntent = PendingIntent.getActivity(applicationContext, 0, intent,
+            PendingIntent.FLAG_IMMUTABLE)
 
         val builder = NotificationCompat.Builder(applicationContext, "REMINDER_CHANNEL_ID")
             .setSmallIcon(R.mipmap.ic_launcher_foreground)
-            .setContentTitle("Questionnaire Reminder")
+            .setContentTitle("Questionnaire available")
             .setContentText("You can finally answer one of your questionnaires again!")
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setContentIntent(pendingIntent)
@@ -63,8 +63,10 @@ class NotificationWorker(appContext: Context, workerParams: WorkerParameters)
         for (entry in entries) {
             val nextQuestionnaireTime = currentTime - entry.notificationTimestamp // This assumes each entry has a timestamp indicating when the user can answer again
 
-            if (currentTime >= nextQuestionnaireTime!!) {
-                sendNotification() // You might want to show a specific notification for each entry, or just a generic one
+            if (currentTime >= nextQuestionnaireTime) {
+
+                val deepLink: Uri = Uri.parse("myapp://assessments")
+                sendNotification(deepLink) // You might want to show a specific notification for each entry, or just a generic one
             }
         }
     }

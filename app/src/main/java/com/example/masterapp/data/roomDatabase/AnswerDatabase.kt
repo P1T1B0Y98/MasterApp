@@ -8,7 +8,7 @@ import androidx.room.TypeConverters
 
 @Database(
     entities = [Answer::class, QuestionnaireReminder::class], // Added QuestionnaireStatus::class
-    version = 3,
+    version = 5,
     exportSchema = false
 )
 @TypeConverters(QuestionAnswerConverter::class)

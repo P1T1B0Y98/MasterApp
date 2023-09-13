@@ -1,8 +1,10 @@
 package com.example.masterapp.presentation.navigation
 
 import AuthManager
+import android.annotation.SuppressLint
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.compose.animation.Crossfade
 import androidx.compose.material.ScaffoldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -14,6 +16,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -102,25 +105,29 @@ fun AppNavigator(
     NavHost(navController = navController, startDestination = startDestination) {
 
         composable(Screen.LoginScreen.route) {
-            LoginScreen(viewModel = loginViewModel,
-                onLoginSuccess = {
-                isLoggedIn
-                navigateToWelcomeScreen(navController)
-            }, onRegister = {
-                navigateToRegisterScreen(navController)
-            },
-                onAboutUs = {
-                    navController.navigate(Screen.AboutScreen.route)
-                })
+            CrossfadeTransition(currentDestination = it) {
+                LoginScreen(viewModel = loginViewModel,
+                    onLoginSuccess = {
+                        isLoggedIn
+                        navigateToWelcomeScreen(navController)
+                    }, onRegister = {
+                        navigateToRegisterScreen(navController)
+                    },
+                    onAboutUs = {
+                        navController.navigate(Screen.AboutScreen.route)
+                    })
+            }
         }
 
         composable(Screen.RegisterScreen.route) {
-            RegisterScreen(viewModel = registerViewModel, onLoginSuccess = {
-                isLoggedIn
-                navigateToWelcomeScreen(navController)
-            }, onRegister = {
-                navigateToLoginScreen(navController)
-            })
+            CrossfadeTransition(currentDestination = it) {
+                RegisterScreen(viewModel = registerViewModel, onLoginSuccess = {
+                    isLoggedIn
+                    navigateToWelcomeScreen(navController)
+                }, onRegister = {
+                    navigateToLoginScreen(navController)
+                })
+            }
         }
 
         composable(Screen.SetupScreen.route) {
@@ -140,29 +147,34 @@ fun AppNavigator(
                     onPermissionsResult()
                 }
 
-            SetupScreen(
-                uiState = viewModel.uiState,
-                onPermissionsLaunch = { values ->
-                    Log.d("WelcomeScreen", "Requesting permissions: $values")  // <-- Add this log
-                    permissionsLauncher.launch(values)
-                },
-                viewModel = viewModel,
-                navController = navController,
-                notificationSettingsManager = notificationSettingsManager,
-            )
+            CrossfadeTransition(currentDestination = it) {
+                SetupScreen(
+                    uiState = viewModel.uiState,
+                    onPermissionsLaunch = { values ->
+                        Log.d("WelcomeScreen", "Requesting permissions: $values")  // <-- Add this log
+                        permissionsLauncher.launch(values)
+                    },
+                    viewModel = viewModel,
+                    navController = navController,
+                    notificationSettingsManager = notificationSettingsManager,
+                )
+                
+            }
         }
 
         composable(Screen.HomeScreen.route) {
-            HomeScreen(
-                navController = navController,
-            )
+            CrossfadeTransition(currentDestination = it) {
+                HomeScreen(
+                    navController = navController,
+                )
+            }
         }
 
         composable(
             route = Screen.AssessmentScreen.route,
             deepLinks = listOf(
                 navDeepLink {
-                    uriPattern = "myapp://assessment"
+                    uriPattern = "myapp://assessments"
                 }
             )) {
             val assessmentViewModel: AssessmentViewModel = viewModel(factory = assessmentViewModelFactory)
@@ -174,20 +186,25 @@ fun AppNavigator(
                     onPermissionsResult()
                 }
 
-            AssessmentPage(
-                viewModel = assessmentViewModel,
-                navController = navController,
-                sharedViewModel= sharedViewModel,
-                onPermissionsLaunch = { values ->
-                    permissionsLauncher.launch(values)
-                },
-                healthConnectManager = healthConnectManager,)
+            CrossfadeTransition(currentDestination = it) {
+                AssessmentPage(
+                    viewModel = assessmentViewModel,
+                    navController = navController,
+                    sharedViewModel= sharedViewModel,
+                    onPermissionsLaunch = { values ->
+                        permissionsLauncher.launch(values)
+                    },
+                    healthConnectManager = healthConnectManager,)
+                
+            }
         }
 
         composable(Screen.ProfileScreen.route) {
-            ProfileScreen(
-                sharedViewModel = sharedViewModel,
-            )
+            CrossfadeTransition(currentDestination = it) {
+                ProfileScreen(
+                    sharedViewModel = sharedViewModel,
+                )
+            }
         }
         // Add the navigation action for AnswerAssessmentScreen
         composable(Screen.AnswerAssessmentScreen.route) {
@@ -202,32 +219,39 @@ fun AppNavigator(
             ))
 
             // Pass the viewModel to the AssessmentPage composable
-            AnswerAssessmentPage(
-                viewModel = answerAssessmentViewModel,
-                sharedViewModel = sharedViewModel,
-                onGoToResults = {
-                    navController.navigate(Screen.ResultsScreen.route)
-                },
-                onGoToAssessments = {
-                    navController.navigate(Screen.AssessmentScreen.route)
-                }
-            )
+            CrossfadeTransition(currentDestination = it) {
+                AnswerAssessmentPage(
+                    viewModel = answerAssessmentViewModel,
+                    sharedViewModel = sharedViewModel,
+                    onGoToResults = {
+                        navController.navigate(Screen.ResultsScreen.route)
+                    },
+                    onGoToAssessments = {
+                        navController.navigate(Screen.AssessmentScreen.route)
+                    }
+                )
+            }
         }
 
         composable(Screen.ResultsScreen.route) {
             val viewModel: ResultsViewModel = viewModel(
                 factory = ResultsViewModelFactory(
                     answerViewModel = answerViewModel,
-                    sharedViewModel = sharedViewModel
+                    sharedViewModel = sharedViewModel,
+                    apolloClient = apolloClient
                 )
             )
-            ResultsScreen(
-                viewModel = viewModel,
-            )
+            CrossfadeTransition(currentDestination = it) {
+                ResultsScreen(
+                    viewModel = viewModel,
+                )
+            }
         }
 
         composable(Screen.AboutScreen.route) {
-            AboutScreen()
+            CrossfadeTransition(currentDestination = it) {
+                AboutScreen()
+            }
         }
 
         composable(Screen.SettingsScreen.route) {
@@ -246,20 +270,22 @@ fun AppNavigator(
 
                 }
 
-            SettingsScreen(
-                healthConnectManager = healthConnectManager,
-                revokeAllPermissions = {
-                    scope.launch {
-                        healthConnectManager.revokeAllPermissions()
-                    }
-                },
-                onPermissionsLaunch = { values ->
-                    Log.d("WelcomeScreen", "Requesting permissions: $values")  // <-- Add this log
-                    permissionsLauncher.launch(values)
-                },
-                viewModel = viewModel,
-                navController = navController,
-            )
+            CrossfadeTransition(currentDestination = it) {
+                SettingsScreen(
+                    healthConnectManager = healthConnectManager,
+                    revokeAllPermissions = {
+                        scope.launch {
+                            healthConnectManager.revokeAllPermissions()
+                        }
+                    },
+                    onPermissionsLaunch = { values ->
+                        Log.d("WelcomeScreen", "Requesting permissions: $values")  // <-- Add this log
+                        permissionsLauncher.launch(values)
+                    },
+                    viewModel = viewModel,
+                    navController = navController,
+                )
+            }
         }
 
         composable(
@@ -270,7 +296,9 @@ fun AppNavigator(
                 }
             )
         ) {
-            PrivacyPolicyScreen()
+            CrossfadeTransition(currentDestination = it) {
+                PrivacyPolicyScreen()
+            }
         }
     }
 }
@@ -295,4 +323,17 @@ private fun navigateToRegisterScreen(navController: NavHostController) {
 
 private fun navigateToLoginScreen(navController: NavHostController) {
     navController.navigate(Screen.LoginScreen.route)
+}
+
+@SuppressLint("UnusedCrossfadeTargetStateParameter")
+@Composable
+fun CrossfadeTransition(
+    currentDestination: NavBackStackEntry,
+    content: @Composable () -> Unit
+) {
+    Crossfade(targetState = currentDestination, label = "") {
+Log.i("CrossfadeTransition", "CrossfadeTransition")
+        Log.i("CrossfadeTransition", "currentDestination: $currentDestination")
+        content()
+    }
 }

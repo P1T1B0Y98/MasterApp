@@ -12,7 +12,7 @@ private const val KEY_TOKEN = "accessToken"
 private const val ENCRYPTED_PREFS_NAME = "my_encrypted_prefs"
 
 // Create a data class to represent the user profile
-data class UserProfile(val id: String, val authenticationUid: String?, val fullName: String?, val firstName: String?, val email: String)
+data class UserProfile(val id: String?, val authenticationUid: String?, val fullName: String?, val firstName: String?, val email: String)
 
 // Create an object to manage authentication
 object AuthManager {
@@ -64,7 +64,7 @@ object AuthManager {
         val userProfile = getUserProfile()
         if (userProfile != null) {
             val clearedUserProfile = UserProfile(
-                id = userProfile.id,
+                id = null,
                 authenticationUid = null,
                 fullName = null,
                 firstName = null,

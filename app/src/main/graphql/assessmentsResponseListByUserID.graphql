@@ -1,0 +1,14 @@
+query ASSESSMENTS_RESPONSE_BY_USER($userID: ID!, $limit: Int, $offset: Int) {
+    assessmentResponseListByUserID(userID: $userID, limit: $limit, offset: $offset) {
+        count
+        rows {
+            id
+            formData
+            assessmentID {
+                id
+                title
+                assessment_type
+            }
+        }
+    }
+}
