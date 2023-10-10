@@ -1,0 +1,7 @@
+mutation QUESTIONNAIRE_SUBMIT(
+    $data: questionnaireResponseInput!
+) {
+    questionnaireResponseCreate(data: $data) {
+        id
+    }
+}

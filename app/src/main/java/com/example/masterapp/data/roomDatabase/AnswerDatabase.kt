@@ -7,25 +7,24 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 
 @Database(
-    entities = [Answer::class, QuestionnaireReminder::class], // Added QuestionnaireStatus::class
-    version = 5,
+    entities = [QuestionnaireReminder::class], // Added QuestionnaireStatus::class
+    version = 4,
     exportSchema = false
 )
 @TypeConverters(QuestionAnswerConverter::class)
-abstract class AnswerDatabase : RoomDatabase() {
-    abstract val answerDao: AnswerDao
+abstract class QuestionnaireReminderDatabase : RoomDatabase() {
     abstract val questionnaireReminderDao: QuestionnaireReminderDao // Added this DAO reference
 
     companion object {
         @Volatile
-        private var INSTANCE: AnswerDatabase? = null
+        private var INSTANCE: QuestionnaireReminderDatabase? = null
 
-        fun getDatabase(context: Context): AnswerDatabase {
+        fun getDatabase(context: Context): QuestionnaireReminderDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
-                    AnswerDatabase::class.java,
-                    "answer_database"
+                    QuestionnaireReminderDatabase::class.java,
+                    "questionnaire_reminder_database"
                 )
                     .fallbackToDestructiveMigration() // Add this to allow destructive migration
                     .build()

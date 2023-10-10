@@ -2,7 +2,6 @@ package com.example.masterapp.presentation.component
 
 import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -45,17 +44,14 @@ import com.example.masterapp.presentation.formatTimeOnly
 import java.time.ZoneId
 
 @Composable
-fun VisualizeSleepData(sleepData: List<AnswerData>) {
-    val allSleepSessions = sleepData
-        .filterIsInstance<AnswerData.Sleep>()
-        .flatMap { it.data }
-    Log.i("VisualizeSleepData", "All sleep sessions: $allSleepSessions")
-    val allSleepDays = allSleepSessions.map { it.startTime.atZone(ZoneId.systemDefault()).toLocalDate() }.distinct()
+fun VisualizeSleepData(sleepData: List<SleepSessionData>) {
+
+    val allSleepDays = sleepData.map { it.startTime.atZone(ZoneId.systemDefault()).toLocalDate() }.distinct()
     val showSnackbar = remember { mutableStateOf(false) }
     val expandedState = remember { mutableStateOf(true) } // Initial state is expanded
 
     val selectedDateState = remember { mutableStateOf(allSleepDays.firstOrNull()) }
-    val selectedSleepSession = allSleepSessions.find { it.startTime.atZone(ZoneId.systemDefault()).toLocalDate() == selectedDateState.value }
+    val selectedSleepSession = sleepData.find { it.startTime.atZone(ZoneId.systemDefault()).toLocalDate() == selectedDateState.value }
 
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -116,7 +112,7 @@ fun VisualizeSleepData(sleepData: List<AnswerData>) {
 
                             Spacer(modifier = Modifier.height(16.dp))
 
-                            SleepSessionCard(selectedSleepSession, allSleepSessions.size)
+                            SleepSessionCard(selectedSleepSession, sleepData.size)
                         }
                     }
                 }

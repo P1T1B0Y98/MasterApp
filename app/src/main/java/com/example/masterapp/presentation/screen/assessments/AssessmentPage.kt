@@ -113,6 +113,10 @@ fun AssessmentPage(
                                         }
                                     )
                                 }
+
+                                item {
+                                    Spacer(modifier = Modifier.height(40.dp))
+                                }
                             } else {
                                 item {
                                     NoQuestionnairesContent(type = "available")

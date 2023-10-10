@@ -1,7 +1,0 @@
-mutation ASSESSMENTS_SUBMIT(
-    $data: assessmentResponseInput!
-) {
-    assessmentResponseCreate(data: $data) {
-        id
-    }
-}

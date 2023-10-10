@@ -1,10 +1,10 @@
-query GET_ASSESSMENTS_LIST(
-    $filter: AssessmentsFilterInput,
+query GET_QUESTIONNAIRES_LIST(
+    $filter: QuestionnairesFilterInput,
     $limit: Int,
     $offset: Int,
-    $orderBy: AssessmentsOrderByEnum
+    $orderBy: QuestionnairesOrderByEnum
 ) {
-    assessmentsList(
+    questionnairesList(
         filter: $filter,
         limit: $limit,
         offset: $offset,
@@ -13,14 +13,14 @@ query GET_ASSESSMENTS_LIST(
         rows {
             id
             title
-            assessment_type
-            frequency
-            assessmentSchema {
+            type
+            repeats
+            item {
+                linkId
                 type
-                question
-                field
-                options {
-                    field
+                text
+                required
+                answerOption {
                     label
                     value
                 }

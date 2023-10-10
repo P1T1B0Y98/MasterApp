@@ -10,16 +10,13 @@ import android.net.ConnectivityManager
 import android.os.Build
 import android.util.Log
 import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.apollographql.apollo3.ApolloClient
 import com.example.masterapp.NotificationWorker
 import com.example.masterapp.NotificationSettingsManager
-import com.example.masterapp.data.EncryptionHelper
 import com.example.masterapp.data.HealthConnectManager
-import com.example.masterapp.data.roomDatabase.AnswerDatabase
+import com.example.masterapp.data.roomDatabase.QuestionnaireReminderDatabase
 import com.example.masterapp.presentation.screen.setup.PreferencesHelper
-import java.security.KeyStore
 import java.util.concurrent.TimeUnit
 
 class BaseApplication : Application() {
@@ -35,9 +32,8 @@ class BaseApplication : Application() {
         NotificationSettingsManager(this)
     }
 
-
-    val answerDatabase: AnswerDatabase by lazy {
-        AnswerDatabase.getDatabase(this)
+    val questionnaireReminderDatabase: QuestionnaireReminderDatabase by lazy {
+        QuestionnaireReminderDatabase.getDatabase(this)
     }
 
     override fun onCreate() {

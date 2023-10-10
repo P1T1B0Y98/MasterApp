@@ -9,14 +9,21 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.BottomNavigation
+import androidx.compose.material.BottomNavigationItem
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Snackbar
 import androidx.compose.material.SnackbarHost
 import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Assessment
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material.rememberScaffoldState
 import androidx.compose.runtime.Composable
@@ -28,6 +35,7 @@ import androidx.compose.ui.Modifier
 import com.example.masterapp.presentation.theme.Lavender
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.health.connect.client.HealthConnectClient.Companion.SDK_AVAILABLE
 import androidx.navigation.NavController
@@ -127,7 +135,73 @@ fun MasterApp(
             snackbarHost = {
                 SnackbarHost(it) { data -> Snackbar(snackbarData = data) }
             },
-
+            bottomBar = {
+                if (userLoggedIn && availability == SDK_AVAILABLE) {
+                    // Add the BottomNavigation component here
+                    BottomNavigation(
+                        modifier = Modifier.fillMaxWidth(),
+                        backgroundColor = MaterialTheme.colors.primary
+                    ) {
+                        BottomNavigationItem(
+                            icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
+                            label = { Text(text = "Home") },
+                            selected = currentRoute == Screen.HomeScreen.route,
+                            onClick = {
+                                navController.navigate(Screen.HomeScreen.route)
+                            }
+                        )
+                        BottomNavigationItem(
+                            icon = {
+                                Icon(
+                                    Icons.Default.Assessment,
+                                    contentDescription = "Questionnaires"
+                                )
+                            },
+                            label = {
+                                Text(
+                                    text = "Questionnaires",
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier
+                                        .padding(start = 0.dp, end = 0.dp),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis // Add ellipsis for overflow
+                                )
+                            },
+                            selected = currentRoute == Screen.AssessmentScreen.route,
+                            onClick = {
+                                navController.navigate(Screen.AssessmentScreen.route)
+                            }
+                        )
+                        BottomNavigationItem(
+                            icon = {
+                                Icon(
+                                    Icons.Default.BarChart,
+                                    contentDescription = "Settings"
+                                )
+                            },
+                            label = { Text(text = "Results") },
+                            selected = currentRoute == Screen.ResultsScreen.route,
+                            onClick = {
+                                navController.navigate(Screen.ResultsScreen.route)
+                            }
+                        )
+                        BottomNavigationItem(
+                            icon = {
+                                Icon(
+                                    Icons.Default.Settings,
+                                    contentDescription = "Settings"
+                                )
+                            },
+                            label = { Text(text = "Settings") },
+                            selected = currentRoute == Screen.SettingsScreen.route,
+                            onClick = {
+                                navController.navigate(Screen.SettingsScreen.route)
+                            }
+                        )
+                        // Add more BottomNavigationItem elements for your other screens
+                    }
+                }
+            }
         ) {
             AppNavigator(
                 healthConnectManager = healthConnectManager,
@@ -149,6 +223,7 @@ fun getScreenNameFromRoute(route: String?): String {
         Screen.SettingsScreen.route -> "Settings"
         Screen.AboutScreen.route -> "About us"
         Screen.RegisterScreen.route -> "Register"
+        Screen.SetupScreen.route -> "Setup"
         Screen.ResultsScreen.route -> "Results"
         Screen.ProfileScreen.route -> "Profile"
         Screen.PrivacyPolicyScreen.route -> "Privacy Policy"

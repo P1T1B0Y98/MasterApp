@@ -2,12 +2,13 @@ package com.example.masterapp.presentation.screen.results
 
 import android.util.Log
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material.Button
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Card
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
@@ -16,6 +17,7 @@ import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.rounded.QuestionAnswer
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -31,10 +33,10 @@ import com.example.masterapp.presentation.component.VisualizeSleepData
 import com.example.masterapp.presentation.component.VisualizeStressData
 import androidx.compose.runtime.*
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.unit.DpOffset
-import com.example.masterapp.presentation.component.ChartData
-import com.example.masterapp.presentation.component.PieChartComposable
-
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+import com.example.masterapp.presentation.component.GeneralInformationCard
+import com.example.masterapp.presentation.theme.lightSleepColor
 
 @Composable
 fun DetailedResult(
@@ -45,71 +47,101 @@ fun DetailedResult(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
+        contentPadding = PaddingValues(bottom = 50.dp) // Add extra space at the bottom
     ) {
+
+
         item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Start,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(
-                    onClick = onBack,
-                    modifier = Modifier.padding(end = 16.dp),
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Back",
-                        tint= MaterialTheme.colors.primary// Adjust width and height here
-                    )
-                }
-
-
-                Text(
-                    text = answer.assessmentId.title,
-                    style = MaterialTheme.typography.h4,
-                    color = MaterialTheme.colors.primary,
-                    modifier = Modifier.padding(bottom = 10.dp),
-                    textAlign = TextAlign.Center
-                )
-            }
-            Text(
-                text = "Completed at: ${answer.formData.metadata.submissionDate}",
-                style = MaterialTheme.typography.body1,
-                color = MaterialTheme.colors.primary,
-                modifier = Modifier.padding(bottom = 5.dp),
-                textAlign = TextAlign.Center
-            )
+            Spacer(modifier = Modifier.height(10.dp))
+            GeneralInformationCard(answer = answer)    
+            Spacer(Modifier.height(10.dp))
         }
 
-        items(answer.formData.questions) { questionAnswer ->
-            when (questionAnswer.questionType) {
+        items(answer.item) { questionAnswer ->
+            when (questionAnswer.type) {
                 "smartwatch_data" -> {
-                    when (answer.assessmentId.assessmentType.toString()) {
-                        "physical_health" -> VisualizeExerciseData(questionAnswer.answer)
-                        "stress" -> VisualizeStressData(questionAnswer.answer)
-                        "sleep" -> VisualizeSleepData(questionAnswer.answer)
+                    when (val answerData = questionAnswer.answer) {
+                        is AnswerData.Exercise -> {
+                            VisualizeExerciseData(answerData.value)
+                        }
+                        is AnswerData.Stress -> {
+                            VisualizeStressData(answerData.value)
+                        }
+                        is AnswerData.Sleep -> {
+                            VisualizeSleepData(answerData.value)
+                        }
+                        else -> {
+                            // Handle other cases or provide a default behavior here
+                        }
                     }
                 }
             }
-            Spacer(modifier = Modifier.height(16.dp))
         }
 
-        itemsIndexed(answer.formData.questions) { index, questionAnswer ->
-            QuestionWithDropdown(questionNumber = index + 1, question = questionAnswer.question, answer = questionAnswer.answer)
-            Spacer(Modifier.height(5.dp))
+        item {
+            QuestionAnswersCard(answer)
         }
     }
 }
 
 @Composable
-fun QuestionWithDropdown(questionNumber: Int, question: String, answer: List<AnswerData>) {
+fun QuestionAnswersCard(answer: AssessmentResponses) {
+    Spacer(modifier = Modifier.height(10.dp))
+    Card(
+        shape = RoundedCornerShape(12.dp),
+        modifier = Modifier
+            .fillMaxWidth(),
+        backgroundColor = MaterialTheme.colors.primary
+    ) {
+        Column(
+            modifier = Modifier
+                .background(MaterialTheme.colors.primary)
+        ) {
+            Row(
+
+            ) {
+                Text(
+                    text = "Questionnaire answers",
+                    style = MaterialTheme.typography.h6,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(8.dp),
+                )
+
+                Icon(
+                    imageVector = Icons.Rounded.QuestionAnswer,
+                    contentDescription = "Information",
+                    tint = Color.White,
+                    modifier = Modifier.padding(start = 20.dp, top = 5.dp).size(30.dp)
+                )
+            }
+            answer.item.forEachIndexed(){ index, questionAnswer ->
+                QuestionWithDropdown(
+                    questionNumber = index + 1,
+                    question = questionAnswer.text,
+                    answer = questionAnswer.answer
+                )
+                Spacer(Modifier.height(5.dp))
+            }
+        }
+    }
+}
+
+@Composable
+fun QuestionWithDropdown(questionNumber: Int, question: String, answer: AnswerData) {
     var expanded by remember { mutableStateOf(false) }
 
     Card(
+        shape = RoundedCornerShape(12.dp),
         modifier = Modifier
             .fillMaxWidth()
             .clickable { expanded = !expanded }
+            .padding(8.dp)
+            .border(
+                width = 1.dp,
+                color = lightSleepColor,
+                shape = RoundedCornerShape(12.dp)),
     ) {
         Column(
             modifier = Modifier
@@ -149,24 +181,22 @@ fun QuestionWithDropdown(questionNumber: Int, question: String, answer: List<Ans
                             .padding(16.dp)
                             .fillMaxWidth()
                     ) {
-                        for (answer in answer) {
-                            when (answer) {
-                                is AnswerData.Textual -> {
-                                    for (text in answer.values) {
-                                        Text(
-                                            "Answer: $text",
-                                            color = MaterialTheme.colors.primary,
-                                            modifier = Modifier.padding(8.dp)
-                                        )
-                                    }
-                                }
-                                else -> {
+                        when (answer) {
+                            is AnswerData.Textual -> {
+                                for (text in answer.value) {
                                     Text(
-                                        "Answer: See the answer over. This was a smartwatch data question.",
+                                        "Answer: $text",
                                         color = MaterialTheme.colors.primary,
                                         modifier = Modifier.padding(8.dp)
                                     )
                                 }
+                            }
+                            else -> {
+                                Text(
+                                    "Answer: See the answer over. This was a smartwatch data question.",
+                                    color = MaterialTheme.colors.primary,
+                                    modifier = Modifier.padding(8.dp)
+                                )
                             }
                         }
                     }
@@ -175,14 +205,4 @@ fun QuestionWithDropdown(questionNumber: Int, question: String, answer: List<Ans
         }
     }
 }
-
-
-
-
-
-
-
-
-
-
 

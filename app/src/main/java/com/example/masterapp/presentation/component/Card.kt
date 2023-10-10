@@ -21,7 +21,7 @@ fun MyCard(title: String, description: String, buttonText: String, onClick: () -
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
+            .padding(vertical = 8.dp, horizontal = 32.dp),
         elevation = 8.dp
     ) {
         Column(

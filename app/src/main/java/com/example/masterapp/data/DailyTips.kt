@@ -1,5 +1,7 @@
 package com.example.masterapp.data
 
+import java.util.Calendar
+
 object DailyTips {
 
     val tips = listOf(
@@ -37,5 +39,12 @@ object DailyTips {
 
     fun getRandomTip(): String {
         return tips.random()
+    }
+
+    fun getTipOfTheDay(): String {
+        val calendar = Calendar.getInstance()
+        val dayOfYear = calendar.get(Calendar.DAY_OF_YEAR)
+        val tipIndex = dayOfYear % tips.size
+        return tips[tipIndex]
     }
 }

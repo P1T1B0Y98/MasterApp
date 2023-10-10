@@ -3,9 +3,9 @@ type Query {
 
     assignmentsFind("" id: String!): Assignment!
 
-    assessmentsList("" filter: AssessmentsFilterInput, "" limit: Int, "" offset: Int, "" orderBy: AssessmentsOrderByEnum): AssessmentsPage!
+    questionnairesList("" filter: QuestionnairesFilterInput, "" limit: Int, "" offset: Int, "" orderBy: QuestionnairesOrderByEnum): QuestionnairesPage!
 
-    assessmentsFind("" id: String!): Assessment!
+    questionnairesFind("" id: String!): Questionnaire!
 
     assignmentsAutocomplete("" query: String, "" limit: Int): [AutocompleteOption!]!
 
@@ -75,11 +75,10 @@ type Query {
 
     assignmentResponseList("" limit: Int, "" offset: Int, "" orderBy: AssignmentsOrderByEnum): assignmentResponsePage!
 
-    assessmentResponseListByUserID(userID: ID!, limit: Int, offset: Int): assessmentResponsePage!
-
+    questionnaireResponseListByUserID(userID: ID!, limit: Int, offset: Int): questionnaireResponsePage!
 }
 
-input AssessmentsFilterInput {
+input QuestionnairesFilterInput {
 
     id: String
 
@@ -135,7 +134,7 @@ type AssignmentsPage {
     count: Int!
 }
 
-enum AssessmentsOrderByEnum {
+enum QuestionnairesOrderByEnum {
     id_ASC
     id_DESC
     title_ASC
@@ -146,27 +145,28 @@ enum AssessmentsOrderByEnum {
     createdAt_DESC
 }
 
-type AssessmentsPage {
-    rows: [Assessment!]!
+type QuestionnairesPage {
+    rows: [Questionnaire!]!
     count: Int!
 }
 
-type Assessment {
+type Questionnaire {
     id: String!
     title: String!
-    frequency: String!
-    assessment_type: AssessmentTypeEnum
-    owner: [Task!]
-    assessmentSchema: [AssessmentSchema]
+    repeats: String!
+    status: String!
+    subjectType: String!
+    type: QuestionnaireTypeEnum
+    item: [QuestionnaireSchema]
     createdAt: DateTime
-    createdBy: User
-    updatedAt: DateTime
+    date: DateTime
 }
 
-enum AssessmentTypeEnum {
-    stress
-    sleep
+enum QuestionnaireTypeEnum {
+    anxiety
+    depression
     physical_health
+    general_health
 }
 
 enum FrequencyTypeEnum {
@@ -177,10 +177,10 @@ enum FrequencyTypeEnum {
     quarterly
 }
 
-input AssessmentInput {
+input QuestionnaireInput {
     title: String!
     sub_title: String
-    assessment_type: AssessmentTypeEnum
+    questionnaire_type: QuestionnaireTypeEnum
     formSchema: [FormSchemaInput]
 }
 type Assignment {
@@ -647,22 +647,18 @@ type FormSchema {
     formSchema: [RuleType]
 }
 
-type AssessmentSchema {
+type QuestionnaireSchema {
+
+    linkId: String!
+
     type: QuestionEnum
 
-    placeholder: String
+    text: String!
 
-    field: String!
 
-    question: String!
+    required: Boolean!
 
-    frequency: String!
-
-    rules: [RuleType]
-
-    options: [OptionType]
-
-    assessmentSchema: [RuleType]
+    answerOption: [OptionType]
 }
 
 enum QuestionEnum {
@@ -692,11 +688,9 @@ type RuleType {
 }
 
 type OptionType {
-    field: String!
-
     value: String!
 
-    label: String
+    label: String!
 }
 
 type AutocompleteOption {
@@ -1117,8 +1111,8 @@ type assignmentResponsePage {
     count: Int!
 }
 
-type assessmentResponsePage {
-    rows: [AssessmentResponse!]!
+type questionnaireResponsePage {
+    rows: [QuestionnaireResponse!]!
     count: Int!
 }
 
@@ -1134,16 +1128,16 @@ type AssignmentResponse {
     createdBy: User
 }
 
-type AssessmentResponse {
+type QuestionnaireResponse {
     id: String!
 
-    assessmentID: [Assessment!]
+    questionnaire: Questionnaire!
 
-    formData: JSON
+    item: JSON
 
     createdAt: DateTime
 
-    createdBy: User
+    subject: User
 }
 
 type Mutation {
@@ -1231,7 +1225,11 @@ type Mutation {
 
     assignmentResponseCreate("" data: assignmentResponseInput!): AssignmentResponse!
 
-    assessmentResponseCreate("" data: assessmentResponseInput!): AssessmentResponse!
+    questionnaireResponseCreate("" data: questionnaireResponseInput!): QuestionnaireResponse!
+
+    questionnaireResponseDelete(id: String!): Boolean!
+
+    questionnaireResponseDeleteAll(userId: String!): Boolean!
 }
 
 input IamEditInput {
@@ -1506,11 +1504,49 @@ input assignmentResponseInput {
     formData: JSON
 }
 
-input assessmentResponseInput {
-    assessmentID: String
+input questionnaireResponseInput {
+    resourceType: String!
 
-    formData: JSON
+    questionnaire: String!
+
+    status: String!
+
+    subject: String!
+
+    authored: String!
+
+    item: JSON!
+
+    meta: FHIRMetaInput!
 }
+
+input FHIRMetaInput {
+    versionId: String! # The version ID of the resource.
+    lastUpdated: DateTime! # The timestamp when the resource was last updated.
+    source: String! # Information about the device or data source.
+}
+
+input FHIRQuestionnaireResponseItemInput {
+    linkId: String! # A unique identifier for the question or item.
+
+    text: String! # The text or description of the question.
+
+    answer: [FHIRQuestionnaireResponseAnswerInput] # An array of answers for the question.
+}
+
+input FHIRQuestionnaireResponseAnswerInput {
+    # Define different fields for various data types you support (e.g., valueString, valueDate, valueCoding, etc.)
+    valueString: String # Represents a string answer.
+    valueDate: DateTime # Represents a date answer.
+    valueCoding: FHIRCodingInput # Represents a coded answer.
+}
+
+input FHIRCodingInput {
+    system: String! # The coding system URL.
+    code: String! # The code value.
+    display: String # Optional display name for the code.
+}
+
 
 """
 A GraphQL Schema defines the capabilities of a GraphQL server. It exposes all available types and directives on the server, as well as the entry points for query, mutation, and subscription operations.

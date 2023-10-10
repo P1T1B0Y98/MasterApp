@@ -26,3 +26,4 @@ data class ExerciseSessionData(
     @Serializable(with = CustomVelocitySerializer::class) val maxSpeed: Velocity? = null,
     @Serializable(with = CustomVelocitySerializer::class) val avgSpeed: Velocity? = null,
 )
+

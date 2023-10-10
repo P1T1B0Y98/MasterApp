@@ -15,7 +15,7 @@
     <string name="differential_changes">Changes</string>
     <string name="logout">Logout</string>
     <string name="home_screen">Home </string>
-    <string name="assessment_screen">Assessments</string>
+    <string name="assessment_screen">Questionnaires</string>
     <string name="register_screen">Register</string>
 
     <!-- Welcome screen -->
@@ -163,5 +163,8 @@
     <string name="disconnect_description">Revoke all permissions for Health Connect</string>
     <string name="privacy_policies_description">View our privacy policy</string>
     <string name="request_permissions_description">Revoke or enable the permissions for this app and Health Connect</string>
+    <string name="delete_all_data_description">Delete all recorded responses. Once deleted it is gone forever</string>
+    <string name="delete_all_data">Delete Responses</string>
+    <string name="delete_all">Delete</string>
 
 </resources>

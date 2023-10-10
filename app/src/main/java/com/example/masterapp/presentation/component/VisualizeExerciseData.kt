@@ -1,9 +1,6 @@
 package com.example.masterapp.presentation.component
 
-import android.util.Log
-import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -18,67 +15,47 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.AlertDialog
 import androidx.compose.material.Card
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Snackbar
 import androidx.compose.material.Text
-import androidx.compose.material.TextButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.rounded.Bedtime
 import androidx.compose.material.icons.rounded.FitnessCenter
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
-import com.example.masterapp.R
-import com.example.masterapp.data.AnswerData
 import com.example.masterapp.data.ExerciseSession
-import com.example.masterapp.data.ExerciseSessionData
 import com.example.masterapp.presentation.formatDuration
 import com.example.masterapp.presentation.formatTimeAdjusted
-import com.example.masterapp.presentation.formatTimeOnly
-import java.math.RoundingMode
 import java.time.LocalDate
-import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import kotlin.math.pow
 
 @Composable
-fun VisualizeExerciseData(exerciseData: List<AnswerData>) {
-    val allExerciseSessions = exerciseData
-        .filterIsInstance<AnswerData.Exercise>()
-        .flatMap { it.data }
+fun VisualizeExerciseData(exerciseData: List<ExerciseSession>) {
 
-    val allDays = allExerciseSessions.map { it.startTime.toLocalDate() }.distinct()
+    val allDays = exerciseData.map { it.startTime.toLocalDate() }.distinct()
     val showSnackbar = remember { mutableStateOf(false) }
     val selectedSessionIndexState = remember { mutableStateOf(0) }
-    val selectedSession = remember { mutableStateOf(allExerciseSessions.getOrNull(selectedSessionIndexState.value)) }
+    val selectedSession = remember { mutableStateOf(exerciseData.getOrNull(selectedSessionIndexState.value)) }
     val isContentVisible = remember { mutableStateOf(true) } // Determines if content is expanded or shrunk
 
     Column(
@@ -138,14 +115,14 @@ fun VisualizeExerciseData(exerciseData: List<AnswerData>) {
 
                             if (allDays.size > 1) {
                                 DaysSelector(allDays) { selectedDate ->
-                                    selectedSession.value = allExerciseSessions.find { it.startTime.toLocalDate() == selectedDate }
+                                    selectedSession.value = exerciseData.find { it.startTime.toLocalDate() == selectedDate }
                                 }
                             }
 
                             Spacer(modifier = Modifier.height(16.dp))
 
                             // If there's a selected session, display its details
-                            ExerciseSessionCard(selectedSession.value, allExerciseSessions.size)
+                            ExerciseSessionCard(selectedSession.value, exerciseData.size)
                         }
                     }
                 }

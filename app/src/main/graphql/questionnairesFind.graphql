@@ -1,0 +1,21 @@
+query ASSESSMENTS_FIND($id: String!) {
+    questionnairesFind(id: $id) {
+        id
+        title
+        type
+        repeats
+        status
+        item {
+            linkId
+            type
+            text
+            required
+            answerOption {
+                value
+                label
+            }
+        }
+        createdAt
+        date
+    }
+}

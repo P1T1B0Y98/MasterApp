@@ -76,9 +76,9 @@ fun AppNavigator(
     val app = LocalContext.current.applicationContext as BaseApplication
     val apolloClient = app.apolloClient
     val myHealthConnectManager = app.healthConnectManager
-    val answerViewModelFactory = AnswerViewModelFactory(app.answerDatabase.answerDao)
+    val answerViewModelFactory = AnswerViewModelFactory(app.questionnaireReminderDatabase.questionnaireReminderDao)
     val answerViewModel: AnswerViewModel = viewModel(factory = answerViewModelFactory)
-    val dao = app.answerDatabase.questionnaireReminderDao/* initialize or retrieve your DAO here */
+    val dao = app.questionnaireReminderDatabase.questionnaireReminderDao/* initialize or retrieve your DAO here */
     val repository = QuestionnaireRepository(dao)
     val viewModelFactory = QuestionnaireReminderViewModelFactory(repository)
     val questionnaireReminderViewModel: QuestionnaireReminderViewModel = viewModel(factory = viewModelFactory)
@@ -236,8 +236,7 @@ fun AppNavigator(
         composable(Screen.ResultsScreen.route) {
             val viewModel: ResultsViewModel = viewModel(
                 factory = ResultsViewModelFactory(
-                    answerViewModel = answerViewModel,
-                    sharedViewModel = sharedViewModel,
+                    questionnaireReminderViewModel = questionnaireReminderViewModel,
                     apolloClient = apolloClient
                 )
             )
@@ -257,7 +256,9 @@ fun AppNavigator(
         composable(Screen.SettingsScreen.route) {
             val viewModel: SettingsScreenViewModel = viewModel(
                 factory = SettingsScreenViewModelFactory(
-                    healthConnectManager = healthConnectManager
+                    healthConnectManager = healthConnectManager,
+                    apolloClient = apolloClient,
+                    questionnaireReminderViewModel = questionnaireReminderViewModel
                 )
             )
 
@@ -273,11 +274,6 @@ fun AppNavigator(
             CrossfadeTransition(currentDestination = it) {
                 SettingsScreen(
                     healthConnectManager = healthConnectManager,
-                    revokeAllPermissions = {
-                        scope.launch {
-                            healthConnectManager.revokeAllPermissions()
-                        }
-                    },
                     onPermissionsLaunch = { values ->
                         Log.d("WelcomeScreen", "Requesting permissions: $values")  // <-- Add this log
                         permissionsLauncher.launch(values)

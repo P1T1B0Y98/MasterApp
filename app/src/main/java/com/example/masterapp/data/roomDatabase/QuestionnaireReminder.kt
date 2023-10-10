@@ -6,7 +6,7 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "questionnaire_reminders")
 data class QuestionnaireReminder(
-    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    @PrimaryKey val id: Int = 0,
     @ColumnInfo(name = "user_id") val userId: String,
     @ColumnInfo(name = "questionnaire_id") val questionnaireId: String,
     @ColumnInfo(name = "notification_timestamp") val notificationTimestamp: Long,

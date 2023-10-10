@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.masterapp.presentation.theme.lightSleepColor
 
 /**
  * An item in the side navigation drawer.
@@ -37,9 +38,9 @@ fun DrawerItem(
             text = stringResource(item.titleId),
             style = MaterialTheme.typography.h5,
             color = if (selected) {
-                MaterialTheme.colors.primary
+                lightSleepColor
             } else {
-                MaterialTheme.colors.onBackground
+                MaterialTheme.colors.primary
             }
         )
     }

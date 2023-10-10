@@ -13,15 +13,16 @@ import com.apollographql.apollo3.ApolloClient
 import com.apollographql.apollo3.api.Optional
 import com.apollographql.apollo3.exception.ApolloException
 import com.example.masterapp.ASSESSMENTS_FINDQuery
-import com.example.masterapp.GET_ASSESSMENTS_LISTQuery
+import com.example.masterapp.GET_QUESTIONNAIRES_LISTQuery
 import com.example.masterapp.data.Assessment
 import com.example.masterapp.data.AssessmentSchema
+import com.example.masterapp.data.FHIRQuestionnaireResponse
 import com.example.masterapp.data.HealthConnectManager
 import com.example.masterapp.data.Option
 import com.example.masterapp.data.roomDatabase.QuestionnaireRepository
 import com.example.masterapp.presentation.screen.setup.SetupScreenViewModel
-import com.example.masterapp.type.AssessmentsFilterInput
-import com.example.masterapp.type.AssessmentsOrderByEnum
+import com.example.masterapp.type.QuestionnairesFilterInput
+import com.example.masterapp.type.QuestionnairesOrderByEnum
 import kotlinx.coroutines.launch
 import java.io.IOException
 import java.util.UUID
@@ -72,13 +73,13 @@ class AssessmentViewModel(
 
     private suspend fun fetchAndCategorizeAssessments(
         userId: String,
-        filter: AssessmentsFilterInput?,
+        filter: QuestionnairesFilterInput?,
         limit: Int?,
         offset: Int?,
-        orderBy: AssessmentsOrderByEnum?
+        orderBy: QuestionnairesOrderByEnum?
     ) {
 
-        val allAssessments = getAssessmentsList(filter, limit, offset, orderBy)
+        val allAssessments = getQuestionnaireList(filter, limit, offset, orderBy)
         assessmentPair = allAssessments?.let { categorizeAssessments(userId, it) }
         uiState = UiState.PermissionsAccepted
     }
@@ -104,14 +105,14 @@ class AssessmentViewModel(
     }
 
 
-    private suspend fun getAssessmentsList(
-        filter: AssessmentsFilterInput?,
+    private suspend fun getQuestionnaireList(
+        filter: QuestionnairesFilterInput?,
         limit: Int?,
         offset: Int?,
-        orderBy: AssessmentsOrderByEnum?
+        orderBy: QuestionnairesOrderByEnum?
     ): List<Assessment>? {
         try {
-            val query = GET_ASSESSMENTS_LISTQuery(
+            val query = GET_QUESTIONNAIRES_LISTQuery(
                 filter = if (filter != null) Optional.Present(filter) else Optional.Absent,
                 limit = if (limit != null) Optional.Present(limit) else Optional.Absent,
                 offset = if (offset != null) Optional.Present(offset) else Optional.Absent,
@@ -121,20 +122,19 @@ class AssessmentViewModel(
 
             if (!response.hasErrors()) {
                 Log.i("AssessmentsList", "Successfully got assessments list")
-                val assessments = response.data?.assessmentsList?.rows?.map {
+                val assessments = response.data?.questionnairesList?.rows?.map {
                     Assessment(
                         id = it.id,
                         title = it.title,
-                        assessmentType = it.assessment_type,
-                        frequency = it.frequency,
-                        assessmentSchema = it.assessmentSchema?.map { schema ->
+                        assessmentType = it.type,
+                        frequency = it.repeats,
+                        assessmentSchema = it.item?.map { schema ->
                             AssessmentSchema(
                                 type = schema?.type,
-                                field = schema?.field.orEmpty(),
-                                question = schema?.question,
-                                options = schema?.options?.map { option ->
+                                linkId = schema?.linkId,
+                                question = schema?.text,
+                                options = schema?.answerOption?.map { option ->
                                     Option(
-                                        field = option?.field.orEmpty(),
                                         label = option?.label.orEmpty(),
                                         value = option?.value.orEmpty() // Assuming you have a 'value' field in 'Option'
                                     )
@@ -182,19 +182,21 @@ class AssessmentViewModel(
 
     private suspend fun isQuestionnaireCompleted(userId: String, questionnaireID: String): Boolean {
         // Fetch record for the given userId and questionnaireId
-        Log.i("QuestionnaireReminder", "Fetching questionnaire reminder for user $userId and questionnaire $questionnaireID")
+        FHIRQuestionnaireResponse
         val reminder = questionnaireRepository.getQuestionnaire(userId, questionnaireID)
-        Log.i("QuestionnaireReminder", "Reminder: $reminder")
         reminder?.let {
             // If completedTimestamp is null, the questionnaire hasn't been completed yet
+            Log.i("QuestionnaireReminder", reminder.toString())
             if (reminder == null) {
+                Log.i("QuestionnaireReminder", "Reminder is null")
                 return false
             }
 
             // If current time is greater than or equal to the notificationTimestamp, then the user can take the questionnaire again
-            return false
+            Log.i("QuestionnaireReminder", "Current time: ${System.currentTimeMillis()}")
+            Log.i("QuestionnaireReminder", "Notification time: ${reminder.notificationTimestamp}")
+            return System.currentTimeMillis() < reminder.notificationTimestamp
         }
-
         return false
 
     }

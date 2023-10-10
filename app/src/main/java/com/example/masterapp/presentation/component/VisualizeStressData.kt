@@ -1,15 +1,13 @@
 package com.example.masterapp.presentation.component
 
+import HRVLineChart
 import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -43,7 +41,7 @@ import com.example.masterapp.presentation.formatDateAndTime
 
 @Composable
 fun VisualizeStressData(
-    stressData: List<AnswerData>,
+    stressData: StressData,
 ) {
     val showInfoSnackbar = remember { mutableStateOf(false) }
     val isContentVisible = remember { mutableStateOf(true) } // Determines if content is expanded or shrunk
@@ -52,7 +50,7 @@ fun VisualizeStressData(
         shape = RoundedCornerShape(16.dp),
         elevation = 8.dp,
         modifier = Modifier
-            .padding(16.dp)
+            .padding(0.dp)
             .fillMaxWidth(),
         backgroundColor = MaterialTheme.colors.primary
     ) {
@@ -78,7 +76,9 @@ fun VisualizeStressData(
                     Image(
                         painter = icon,
                         contentDescription = "Icon next to Stress Data title",
-                        modifier = Modifier.size(85.dp).padding(start = 20.dp, end = 8.dp)
+                        modifier = Modifier
+                            .size(85.dp)
+                            .padding(start = 20.dp, end = 8.dp)
                     )
 
                     Box(
@@ -105,114 +105,92 @@ fun VisualizeStressData(
                     Column {
                         Spacer(modifier = Modifier.height(8.dp))
 
-                        stressData.forEach { data ->
-                            when (data) {
-                                is AnswerData.Stress -> {
-                                    when (val metricsData = data.data) {
-                                        is StressData.HRVAndHRMetricsData -> {
-                                            val metrics = metricsData.hr
+                        when (stressData) {
+                            is StressData.HRVAndHRMetricsData -> {
+                                val metrics = stressData.hr
 
-                                            Text("Start Time", fontWeight = FontWeight.Bold)
-                                            Text(formatDateAndTime(metrics.startTime))
+                                Text("Start Time", fontWeight = FontWeight.Bold)
+                                Text(formatDateAndTime(metrics.startTime))
 
-                                            Spacer(modifier = Modifier.height(8.dp))
+                                Spacer(modifier = Modifier.height(8.dp))
 
-                                            Text("End Time", fontWeight = FontWeight.Bold)
-                                            Text(formatDateAndTime(metrics.endTime))
+                                Text("End Time", fontWeight = FontWeight.Bold)
+                                Text(formatDateAndTime(metrics.endTime))
 
-                                            Spacer(modifier = Modifier.height(8.dp))
+                                Spacer(modifier = Modifier.height(8.dp))
 
-                                            Text("Measurement Count", fontWeight = FontWeight.Bold)
-                                            Text(metrics.measurementCount.toString())
+                                Text("Measurement Count", fontWeight = FontWeight.Bold)
+                                Text(metrics.measurementCount.toString())
 
-                                            Spacer(modifier = Modifier.height(8.dp))
-                                            Row(
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .padding(vertical = 8.dp),
-                                                horizontalArrangement = Arrangement.Start
-                                            ) {
-                                                BPMCard("Max BPM", metrics.bpmMax.toString())
-                                                BPMCard("Min BPM", metrics.bpmMin.toString())
-                                                BPMCard("Avg BPM", metrics.bpmAvg.toString())
-                                            }
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 8.dp),
+                                    horizontalArrangement = Arrangement.Start
+                                ) {
+                                    BPMCard("Max BPM", metrics.bpmMax.toString())
+                                    BPMCard("Min BPM", metrics.bpmMin.toString())
+                                    BPMCard("Avg BPM", metrics.bpmAvg.toString())
+                                }
 
-                                            Spacer(modifier = Modifier.height(8.dp))
-Log.i("VisualizeStressData", "metricsData.hrv: ${metricsData.hrv}")
-                                            if(metricsData.hrv.isNotEmpty()) {
-                                                Text("HRV Data", fontWeight = FontWeight.Bold)
-                                                        metricsData.hrv.forEach { hrvData ->
-                                                    Column(
-                                                        modifier = Modifier
-                                                            .fillMaxWidth()
-                                                            .padding(8.dp)
-                                                    ) {
-                                                        hrvData?.let {
-                                                            Text(
-                                                                text = "HRV Value: ${it.heartRateVariability}",
-                                                                fontWeight = FontWeight.Bold
-                                                            )
-                                                            Text(
-                                                                text = "Timestamp: ${
-                                                                    formatDateAndTime(it.time.toString())}")
-                                                        }
-                                                    }
+                                Spacer(modifier = Modifier.height(8.dp))
+                                if(stressData.hrv.isNotEmpty()) {
+                                    HRVLineChart(hrvData = stressData.hrv)
+                                } else {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(8.dp)
+                                    ) {
 
-                                                }
-                                            } else {
-                                                Column(
-                                                    modifier = Modifier
-                                                        .fillMaxWidth()
-                                                        .padding(8.dp)
-                                                ) {
-
-                                                    Text(
-                                                        text = "HRV Value: ",
-                                                        fontWeight = FontWeight.Bold,
-                                                        fontSize = 16.sp,
-                                                        color = Color.White
-                                                    )
-                                                    Text(
-                                                        text = "N/A",
-                                                        fontSize = 16.sp,
-                                                        color = Color.White)
-                                                    Spacer(modifier = Modifier.height(8.dp))
-                                                    Text(
-                                                        text = "Timestamp: ",
-                                                        fontWeight = FontWeight.Bold,
-                                                        fontSize = 16.sp,
-                                                        color = Color.White
-                                                    )
-                                                    Text(
-                                                        text = "N/A",
-                                                        fontSize = 16.sp,
-                                                        color = Color.White)
-                                                }
-                                            }
-                                        }
-                                        else -> { /* Handle other metric data if needed */ }
+                                        Text(
+                                            text = "HRV Value: ",
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 16.sp,
+                                            color = Color.White
+                                        )
+                                        Text(
+                                            text = "N/A",
+                                            fontSize = 16.sp,
+                                            color = Color.White)
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Text(
+                                            text = "Timestamp: ",
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 16.sp,
+                                            color = Color.White
+                                        )
+                                        Text(
+                                            text = "N/A",
+                                            fontSize = 16.sp,
+                                            color = Color.White)
                                     }
                                 }
-                                else -> { /* Handle other AnswerData types if needed */ }
                             }
+                            else -> { /* Handle other metric data if needed */ }
                         }
                     }
                 }
             }
+        }
 
-            Box(
-                modifier = Modifier
-                    .size(24.dp)
-                    .clickable {
-                        showInfoSnackbar.value = true
-                    }
-                    .align(Alignment.TopEnd)
+        Box(
+            modifier = Modifier
+                .size(24.dp)
+                .clickable {
+                    showInfoSnackbar.value = true
+                }
+
             ) {
                 Icon(
                     imageVector = Icons.Default.Info,
                     contentDescription = "Information",
                     tint = Color.White,
-                    modifier = Modifier.size(24.dp).padding(5.dp)
+                    modifier = Modifier
+                        .size(24.dp)
+                        .padding(5.dp)
+                        .align(Alignment.TopEnd)
                 )
             }
             if (showInfoSnackbar.value) {
@@ -222,8 +200,8 @@ Log.i("VisualizeStressData", "metricsData.hrv: ${metricsData.hrv}")
             }
 
         }
-    }
 }
+
 
 
 

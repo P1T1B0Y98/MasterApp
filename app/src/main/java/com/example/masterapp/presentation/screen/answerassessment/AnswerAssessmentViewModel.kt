@@ -12,27 +12,31 @@ import androidx.health.connect.client.records.HeartRateVariabilityRmssdRecord
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.apollographql.apollo3.ApolloClient
-import com.apollographql.apollo3.api.Optional
 import com.apollographql.apollo3.exception.ApolloException
-import com.example.masterapp.ASSESSMENTS_SUBMITMutation
+import com.example.masterapp.QUESTIONNAIRE_SUBMITMutation
 import com.example.masterapp.data.AnswerData
+import com.example.masterapp.data.AnswerInput
 import com.example.masterapp.data.Assessment
 import com.example.masterapp.data.AssessmentSchema
 import com.example.masterapp.data.EncryptionHelper
 import com.example.masterapp.data.ExerciseSession
-import com.example.masterapp.data.FormData
+import com.example.masterapp.data.FHIRMeta
+import com.example.masterapp.data.FHIRQuestionnaireResponse
+import com.example.masterapp.data.FHIRQuestionnaireResponseAnswer
+import com.example.masterapp.data.FHIRQuestionnaireResponseItem
 import com.example.masterapp.data.HealthConnectManager
 import com.example.masterapp.data.HeartRateMetrics
 import com.example.masterapp.data.HeartRateVariabilityData
-import com.example.masterapp.data.Metadatas
-import com.example.masterapp.data.QuestionData
+import com.example.masterapp.data.Item
 import com.example.masterapp.data.SleepSessionData
 import com.example.masterapp.data.StressData
 import com.example.masterapp.data.dateTimeWithOffsetOrDefault
 import com.example.masterapp.data.roomDatabase.AnswerViewModel
+import com.example.masterapp.data.roomDatabase.QuestionnaireReminder
 import com.example.masterapp.data.roomDatabase.QuestionnaireReminderViewModel
 import com.example.masterapp.presentation.screen.SharedViewModel
-import com.example.masterapp.type.AssessmentResponseInput
+import com.example.masterapp.type.QuestionnaireResponseInput
+import com.example.masterapp.type.FHIRMetaInput
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -40,6 +44,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.ByteArrayOutputStream
 import java.time.Instant
+import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
@@ -261,44 +266,50 @@ class AnswerAssessmentViewModel(
         assessmentType: String,
         timestamp: ZonedDateTime,
         frequency: String,
-        answerMap: Map<Int, List<AnswerData>>,
+        answerMap: Map<Int, AnswerData>,
         questions: List<AssessmentSchema>
     ) {
 
         Log.i("AnswerMap", answerMap.toString())
-        val questionsList = answerMap.map { (questionIndex, answers) ->
-            Log.i("Answers", answers.toString())
+
+        val items = answerMap.map { (questionIndex, answers) ->
             val question = questions.getOrNull(questionIndex)
-            val questionId = question?.field ?: "Question not found"
+            val questionId = question?.linkId ?: "Question not found"
             val questionType = question?.type?.name ?: "Unknown"
             val questionText = question?.question ?: "Question not found"
 
-            QuestionData(
-                id = questionId,
+            FHIRQuestionnaireResponseItem(
+                linkId = questionId,
+                text = questionText,
+                type = questionType,
+                answer = answers
+            )
+        }
+        val questionsList = answerMap.map { (questionIndex, answers) ->
+            Log.i("Answers", answers.toString())
+            val question = questions.getOrNull(questionIndex)
+            val questionId = question?.linkId ?: "Question not found"
+            val questionType = question?.type?.name ?: "Unknown"
+            val questionText = question?.question ?: "Question not found"
+
+            AnswerInput(
+                linkId = questionId,
                 questionType = questionType,
                 question = questionText,
                 answer = answers
             )
         }
 
-        val metadata = Metadatas(
-            submissionDate = timestamp.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
-            device = "Android"
-        )
+        Log.i("Question List", questionsList.toString())
 
-        val formData = FormData(
-            questions = questionsList,
-            metadata = metadata
-        )
 
-        Log.i("AnswerAssessmentViewModel", "formData: $formData")
+        Log.i("AnswerAssessmentViewModel", "formData: $items")
 
         // Convert formData to a JSON string
-        val serializedFormData = Json.encodeToString(formData)
+        val serializedFormData = Json.encodeToString(items)
 
-        Log.i("AnswerAssessmentViewModel", "formDataMap: $formData")
+        Log.i("AnswerAssessmentViewModel", "formDataMap: $serializedFormData")
 
-        // Convert formDataMap to a JSON string
 
         // Compress the serializedFormData using GZIP
         val compressedFormData = compressStringToGZIP(serializedFormData)
@@ -309,12 +320,24 @@ class AnswerAssessmentViewModel(
         // Encrypt the base64 encoded compressed data
         val encryptedFormData = EncryptionHelper.encrypt(base64CompressedFormData)
 
-        // Now use encryptedFormData for your mutation
+        // Now use enc  ryptedFormData for your mutation
+        Log.i("AnswerAssessmentViewModel", "Encrypted form data: $encryptedFormData")
+        val encryptedInput = QuestionnaireResponseInput(
+            resourceType = "QuestionnaireResponse",
+            questionnaire = assessmentId,
+            status = "completed",
+            subject = userId,
+            authored = timestamp.toString(),
+            item = encryptedFormData,
+            meta = FHIRMetaInput(
+                versionId = 1.toString(),
+                lastUpdated = timestamp.toString(),
+                source = "Android"
 
-        val encryptedInput = AssessmentResponseInput(
-            assessmentID = Optional.Present(assessmentId),
-            formData = Optional.Present(encryptedFormData)
+            )
+
         )
+
 
         Log.i("SerializedFormData", serializedFormData)
         Log.i("AnswerAssessmentViewModel", "Input data encrypted: $encryptedInput")
@@ -322,37 +345,54 @@ class AnswerAssessmentViewModel(
         viewModelScope.launch {
             try {
                 val response =
-                    apolloClient.mutate(ASSESSMENTS_SUBMITMutation(data = encryptedInput)).execute()
+                    apolloClient.mutate(QUESTIONNAIRE_SUBMITMutation(data = encryptedInput)).execute()
                 Log.i("GraphQL", "Response: $response")
                 if (response.hasErrors()) {
                     // Handle GraphQL errors
                     val errors = response.errors?.joinToString(", ") { it.message }
                     Log.e("GraphQL", "Errors: $errors")
                 } else {
+                    Log.i("GraphQL", frequency.toString())
+
+
+                    val notificationTimestamp = frequency?.let { getFrequencyForInterval(it, timestamp) } !!
+                    Log.i("Noti Timestamp", notificationTimestamp.toString())
+                    val timestampUtc = timestamp.withZoneSameInstant(ZoneOffset.UTC).toInstant()
+                    Log.i("Timestamp", timestampUtc.toString())
+                    val reminders = questionnaireReminderViewModel.getQuestionnaireReminder(assessmentId, userId)
+                    val reminder = QuestionnaireReminder(
+                        id = assessmentId.hashCode(),
+                        userId = userId,
+                        questionnaireId = assessmentId,
+                        notificationTimestamp = notificationTimestamp.toEpochMilli(),
+                        completedTimestamp = timestampUtc.toEpochMilli(),
+                    )
+                    if (reminders != null) {
+                        questionnaireReminderViewModel.updateQuestionnaireReminder(reminder)
+                    } else {
+                        questionnaireReminderViewModel.insertReminder(reminder)
+                    }
                     // Handle successful response
-                    Log.i("GraphQL", "Success: ${response.data}")
+                    questionnaireReminderViewModel.insertReminder(
+                        QuestionnaireReminder(
+                            userId = userId,
+                            questionnaireId = assessmentId,
+                            notificationTimestamp = notificationTimestamp.toEpochMilli(),
+                            completedTimestamp = timestampUtc.toEpochMilli(),
+                        )
+                    )
                     // Update UI state to submitted
                     uiState.value = AnswerAssessmentUiState.Submitted
                 }
             } catch (e: ApolloException) {
                 // Handle the exception
                 Log.e("GraphQL", "Failed to submit data", e)
+                Log.e("GraphQL", "Failed to submit data", e)
             }
         }
         uiState.value = AnswerAssessmentUiState.Submitted
     }
 
-
-
-    private fun getTimeForNotification(frequency: String, timestamp: Long): Long {
-        val time = when (frequency) {
-            "Daily" -> timestamp + 86400000
-            "Weekly" -> timestamp + 604800000
-            "Monthly" -> timestamp + 2629800000
-            else -> timestamp + 86400000
-        }
-        return time
-    }
 
     private fun mapDisplayValueToTimeInterval(displayValue: String): TimeInterval? {
         return TimeInterval.values().find { it.displayValue == displayValue }
@@ -368,6 +408,22 @@ class AnswerAssessmentViewModel(
             TimeInterval.ONE_MONTH -> ZonedDateTime.now().minus(1, ChronoUnit.MONTHS).toInstant()
         }
     }
+
+    private fun getFrequencyForInterval(interval: String, completed: ZonedDateTime): Instant {
+        // Convert completed timestamp to UTC
+        val completedUtc = completed.withZoneSameInstant(ZoneOffset.UTC)
+
+        return when (interval) {
+            "null" -> completedUtc.toInstant()
+            "daily" -> completedUtc.plus(1, ChronoUnit.DAYS).toInstant()
+            "weekly" -> completedUtc.plus(1, ChronoUnit.WEEKS).toInstant()
+            "monthly" -> completedUtc.plus(1, ChronoUnit.MONTHS).toInstant()
+            else -> completedUtc.toInstant()
+        }
+    }
+
+
+
 }
 
 fun compressStringToGZIP(data: String): ByteArray {

@@ -97,24 +97,27 @@ fun AnswerAssessmentContent(
             Log.i("Hello", "Collecting smartwatch data")
             Log.i("CurrentQuestion", currentQuestion.toString())
             Log.i("CurrentQuestionIndex", currentQuestionIndex.toString())
-            val dataOption = currentQuestion.options?.find { it.field == "dataOption" }?.value
+            val dataOption = currentQuestion.options?.find { it.label == "dataOption" }?.value
             val timeInterval =
-                currentQuestion.options?.find { it.field == "timeIntervalOption" }?.value
+                currentQuestion.options?.find { it.label == "timeIntervalOption" }?.value
 
             when (dataOption) {
                 "Stress" -> {
                     val data = viewModel.collectAndSendSmartwatchData(timeInterval)
-                    answerMap[currentQuestionIndex] = data?.let { AnswerData.Stress(it) }!!
+                    answerMap[currentQuestionIndex] =
+                        data?.let { AnswerData.Stress(it, "application/json") }!!
                 }
 
                 "Sleep" -> {
                     val data = viewModel.readSleepData(timeInterval)
-                    answerMap[currentQuestionIndex] = data?.let { AnswerData.Sleep(it) }!!
+                    answerMap[currentQuestionIndex] =
+                        data?.let { AnswerData.Sleep(it, "application/json") }!!
                 }
 
                 "Exercise" -> {
                     val data = viewModel.readExerciseSessionsData(timeInterval)
-                    answerMap[currentQuestionIndex] = AnswerData.Exercise(data)
+                    answerMap[currentQuestionIndex] =
+                        data?.let { AnswerData.Exercise(it, "application/json") }!!
                 }
             }
 
@@ -146,7 +149,7 @@ fun AnswerAssessmentContent(
                 text = assessment.title,
                 style = MaterialTheme.typography.h5,
                 fontWeight = FontWeight.Bold,
-                fontSize = 40.sp,
+                fontSize = 25.sp,
                 color = Color.White,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
@@ -242,13 +245,13 @@ fun AnswerAssessmentContent(
                                 QuestionEnum.input, QuestionEnum.textarea, QuestionEnum.date, QuestionEnum.time, QuestionEnum.confirm -> {
                                     // Render an input field (BasicTextField) for text-based inputs
                                     val currentAnswer = answerMap[currentQuestionIndex]?.let {
-                                        if (it is AnswerData.Textual) it.values.first() else ""
+                                        if (it is AnswerData.Textual) it.value.first() else ""
                                     } ?: ""
                                     BasicTextField(
                                         value = currentAnswer,
                                         onValueChange = { newValue ->
                                             answerMap[currentQuestionIndex] =
-                                                AnswerData.Textual(listOf(newValue))
+                                                AnswerData.Textual(listOf(newValue), "string" )
                                         },
 
                                         textStyle = TextStyle(color = Color.Black),
@@ -310,7 +313,7 @@ fun AnswerAssessmentContent(
                                     // Render radio or select options based on the question options
                                     val selectedOptions: List<String> =
                                         when (val answer = answerMap[currentQuestionIndex]) {
-                                            is AnswerData.Textual -> answer.values
+                                            is AnswerData.Textual -> answer.value
                                             // If there are other AnswerData types that could be relevant here, handle them.
                                             else -> emptyList()
                                         }
@@ -328,7 +331,7 @@ fun AnswerAssessmentContent(
                                                     .clickable {
                                                         // Since this is a radio button behavior, update the selected options to just the clicked option
                                                         val updatedOptions = listOf(option.value)
-                                                        val updatedAnswerData = AnswerData.Textual(updatedOptions)
+                                                        val updatedAnswerData = AnswerData.Textual(updatedOptions, "string")
                                                         answerMap[currentQuestionIndex] = updatedAnswerData
                                                     }
                                             ) {
@@ -357,7 +360,7 @@ fun AnswerAssessmentContent(
                                     // Get the selected options from the answerMap
                                     val selectedOptions: List<String> =
                                         when (val answer = answerMap[currentQuestionIndex]) {
-                                            is AnswerData.Textual -> answer.values
+                                            is AnswerData.Textual -> answer.value
                                             else -> emptyList()
                                         }
 
@@ -382,7 +385,7 @@ fun AnswerAssessmentContent(
                                                     } else {
                                                         selectedOptions + option.value
                                                     }
-                                                    val updatedAnswerData = AnswerData.Textual(updatedOptions)
+                                                    val updatedAnswerData = AnswerData.Textual(updatedOptions, "string")
                                                     answerMap[currentQuestionIndex] = updatedAnswerData
                                                 },
                                                 colors = ButtonDefaults.buttonColors(
@@ -492,7 +495,7 @@ fun AnswerAssessmentContent(
                         // Check if the current question is answered before moving to the next question
                         val answer = answerMap[currentQuestionIndex]
                         isAnswered = when (answer) {
-                            is AnswerData.Textual -> answer.values.isNotEmpty()
+                            is AnswerData.Textual -> answer.value.isNotEmpty()
                             else -> answer != null
                         }
                         if (isAnswered) {
@@ -553,7 +556,7 @@ fun submitAllAnswers(sharedViewModel: SharedViewModel, viewModel: AnswerAssessme
     val assessmentType =
         sharedViewModel.getAssessment()?.assessmentType?.name ?: "" // Assuming it's an enum
     val timestamp = ZonedDateTime.now()
-    val answersToSave: Map<Int, List<AnswerData>> = answerMap.mapValues { listOf(it.value) }
+    val answersToSave: Map<Int, AnswerData> = answerMap.mapValues { it.value }
     val frequency = sharedViewModel.getAssessment()?.frequency ?: ""
     viewModel.saveAnswersToDatabase(
         userId,

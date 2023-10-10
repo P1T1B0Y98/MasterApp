@@ -1,22 +1,16 @@
 package com.example.masterapp.presentation.screen.settings
 
-import android.os.RemoteException
 import android.util.Log
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.health.connect.client.permission.HealthPermission
-import androidx.health.connect.client.records.HeartRateRecord
-import androidx.health.connect.client.records.HeartRateVariabilityRmssdRecord
-import androidx.health.connect.client.records.SleepSessionRecord
-import androidx.health.connect.client.units.Mass
-import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.NavController
+import com.apollographql.apollo3.ApolloClient
+import com.apollographql.apollo3.exception.ApolloException
+import com.example.masterapp.QUESTIONNAIRES_RESPONSE_DELETE_ALLMutation
 import com.example.masterapp.data.HealthConnectManager
-import kotlinx.coroutines.delay
+import com.example.masterapp.data.roomDatabase.QuestionnaireReminderViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -24,6 +18,8 @@ import kotlinx.coroutines.launch
 
 class SettingsScreenViewModel(
     private val healthConnectManager: HealthConnectManager,
+    private val apolloClient: ApolloClient,
+    private val questionnaireReminderViewModel: QuestionnaireReminderViewModel
 ) : ViewModel() {
 
     private val permissions = healthConnectManager.permissions
@@ -64,6 +60,26 @@ class SettingsScreenViewModel(
     suspend fun hasAllPermissions(): Boolean {
         return healthConnectManager.hasAllPermissions(permissions)
     }
+
+    suspend fun deleteAllQuestionnaireResponses(userId: String): Boolean? {
+        Log.i("id", userId)
+        try {
+            val mutation = QUESTIONNAIRES_RESPONSE_DELETE_ALLMutation(
+                userId = userId
+            )
+
+            val response = apolloClient.mutate(mutation).execute()
+
+            Log.i(response.toString(), "response")
+
+        } catch (e: ApolloException) {
+            Log.w("AssessmentsList", "Failed to get response list", e)
+        }
+        questionnaireReminderViewModel.deleteAllReminders(userId)
+
+        return false
+    }
+
 
     fun revokePermissions() {
         viewModelScope.launch {

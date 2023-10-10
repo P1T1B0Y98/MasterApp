@@ -1,0 +1,3 @@
+mutation QUESTIONNAIRES_RESPONSE_DELETE($id: String!) {
+    questionnaireResponseDelete(id: $id)
+}

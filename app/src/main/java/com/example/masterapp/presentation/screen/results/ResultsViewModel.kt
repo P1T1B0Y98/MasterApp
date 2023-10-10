@@ -12,19 +12,25 @@ import androidx.lifecycle.viewModelScope
 import com.apollographql.apollo3.ApolloClient
 import com.apollographql.apollo3.api.Optional
 import com.apollographql.apollo3.exception.ApolloException
-import com.example.masterapp.ASSESSMENTS_RESPONSE_BY_USERQuery
+import com.example.masterapp.QUESTIONNAIRES_RESPONSE_BY_USERQuery
+import com.example.masterapp.QUESTIONNAIRES_RESPONSE_DELETEMutation
 import com.example.masterapp.data.EncryptionHelper.decrypt
-import com.example.masterapp.data.FormData
+import com.example.masterapp.data.FHIRQuestionnaireResponseAnswer
+import com.example.masterapp.data.FHIRQuestionnaireResponseItem
+import com.example.masterapp.data.Item
 import com.example.masterapp.data.roomDatabase.AnswerViewModel
+import com.example.masterapp.data.roomDatabase.QuestionnaireReminderViewModel
 import com.example.masterapp.presentation.screen.SharedViewModel
 import kotlinx.coroutines.launch
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 class ResultsViewModel(
-    private val answerViewModel: AnswerViewModel,
-    private val sharedViewModel: SharedViewModel,
-    private val apolloClient: ApolloClient
+    private val questionnaireReminderViewModel: QuestionnaireReminderViewModel,
+    private val apolloClient: ApolloClient,
+
 ) : ViewModel() {
 
     sealed class ResultsUiState {
@@ -66,7 +72,7 @@ class ResultsViewModel(
     }*/
 
     fun onAnswerSelected(answer: AssessmentResponses) {
-        Log.i("ResultsViewModel", "Setting detailed state for answer: ${answer.assessmentId.title}")
+        Log.i("ResultsViewModel", "Setting detailed state for answer: ${answer.questionnaire.title}")
         _uiState.value = ResultsUiState.Detailed(answer)
     }
 
@@ -74,35 +80,39 @@ class ResultsViewModel(
         val userId = AuthManager.getUserId()
         Log.i("UserId:", userId)
         try {
-            val query = ASSESSMENTS_RESPONSE_BY_USERQuery(
+            val query = QUESTIONNAIRES_RESPONSE_BY_USERQuery(
                 userID = AuthManager.getUserId(),
                 limit =  Optional.Absent,
                 offset = Optional.Absent
             )
 
             val response = apolloClient.query(query).execute()
-            val assessmentResponses = response.data?.assessmentResponseListByUserID?.rows ?: emptyList()
+            Log.i("response", response.toString())
+            val assessmentResponses = response.data?.questionnaireResponseListByUserID?.rows ?: emptyList()
 
             val decryptedAssessmentResponses = assessmentResponses.map { response ->
-                val formData = response.formData as? String
+                val formData = response.item as? String
                 if (formData != null) {
                     val decryptedFormData = decrypt(formData)
                     Log.i("Decrypted", "Decrypted form data: $decryptedFormData")
-                    response.copy(formData = decryptedFormData)
+                    response.copy(item = decryptedFormData)
                     Log.i("AssessmentsList", "Assessment response: $response")
                     val json = Json { ignoreUnknownKeys = true}
-                    val formData = json.decodeFromString<FormData>(decryptedFormData)
+                    val item = json.decodeFromString<List<FHIRQuestionnaireResponseItem>>(decryptedFormData)
                     Log.i("AssessmentsList", "Form data: $formData")
+                    val completed = response.createdAt.toString()
+
+                    Log.i("AssessmentsList", "Created at: ${response.createdAt}")
                     AssessmentResponses(
                         id = response.id,
-                        assessmentId = AssessmentInfo(
-                            id = response.assessmentID?.get(0)?.id ?: "",
-                            title = response.assessmentID?.get(0)?.title ?: "",
-                            assessmentType = response.assessmentID?.get(0)?.assessment_type
+                        questionnaire = QuestionnaireInfo(
+                            id = response.questionnaire?.id ?: "",
+                            title = response.questionnaire?.title ?: "",
+                            questionnaireType = response.questionnaire?.type
                         ),
-                        formData = formData
+                        item = item,
+                        completed = formatIso8601ToCustom((completed))
                     )
-
                 } else {
                     return null // In case formData is not a String, keep the original response
                 }
@@ -118,6 +128,24 @@ class ResultsViewModel(
         return null
     }
 
+    suspend fun deleteQuestionnaireResponse(id: String): Boolean? {
+        Log.i("id", id)
+        try {
+            val mutation = QUESTIONNAIRES_RESPONSE_DELETEMutation(
+                id = id
+            )
+
+            val response = apolloClient.mutate(mutation).execute()
+
+            Log.i(response.toString(), "response")
+
+        } catch (e: ApolloException) {
+            Log.w("AssessmentsList", "Failed to get response list", e)
+        }
+        getAssessmentsByUser()
+        questionnaireReminderViewModel.deleteReminder(AuthManager.getUserId(), id)
+        return false
+    }
 
     fun goBack() {
         Log.i("ResultsViewModel", "goBack() invoked")
@@ -125,4 +153,16 @@ class ResultsViewModel(
     }
 
     // Implement other logic and functions as needed
+    fun formatIso8601ToCustom(dateTimeString: String): String {
+        val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
+        val outputFormat = SimpleDateFormat("dd.MM.yy HH:mm", Locale.getDefault())
+
+        try {
+            val date = inputFormat.parse(dateTimeString)
+            return outputFormat.format(date)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return ""
+        }
+    }
 }

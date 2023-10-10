@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Accessibility
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.Mood
+import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,7 +28,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.masterapp.data.Assessment
-import com.example.masterapp.type.AssessmentTypeEnum
+import com.example.masterapp.type.QuestionnaireTypeEnum
 
 @Composable
 fun AssessmentCard(
@@ -49,9 +50,10 @@ fun AssessmentCard(
             // Icon positioned at the top-right corner
             Icon(
                 when (assessment.assessmentType) {
-                    AssessmentTypeEnum.stress -> Icons.Default.Mood
-                    AssessmentTypeEnum.sleep -> Icons.Default.Accessibility
-                    AssessmentTypeEnum.physical_health -> Icons.Default.FitnessCenter
+                    QuestionnaireTypeEnum.anxiety -> Icons.Default.Mood
+                    QuestionnaireTypeEnum.depression -> Icons.Default.Accessibility
+                    QuestionnaireTypeEnum.physical_health -> Icons.Default.FitnessCenter
+                    QuestionnaireTypeEnum.general_health -> Icons.Default.WbSunny
                     else -> {
                         Icons.Default.Mood  }
                 },
@@ -102,20 +104,22 @@ fun AssessmentCard(
 
 
 
-private fun getFormattedType(assessmentType: AssessmentTypeEnum?): String {
+private fun getFormattedType(assessmentType: QuestionnaireTypeEnum?): String {
     return when (assessmentType) {
-        AssessmentTypeEnum.stress -> "Stress"
-        AssessmentTypeEnum.sleep -> "Sleep"
-        AssessmentTypeEnum.physical_health -> "Physical health"
+        QuestionnaireTypeEnum.anxiety -> "Anxiety"
+        QuestionnaireTypeEnum.depression -> "Depression"
+        QuestionnaireTypeEnum.physical_health -> "Physical health"
+        QuestionnaireTypeEnum.general_health -> "General health"
         else -> "Unknown Type" // Add a default value for unrecognized types, if needed.
     }
 }
 
-private fun getColorForType(assessmentType: AssessmentTypeEnum?): Color {
+private fun getColorForType(assessmentType: QuestionnaireTypeEnum?): Color {
     return when (assessmentType) {
-        AssessmentTypeEnum.stress -> Color(0xFF86C6E5) // Blue with alpha FF (full opacity)
-        AssessmentTypeEnum.sleep -> Color(0xFF8BC34A) // Green with alpha FF (full opacity)
-        AssessmentTypeEnum.physical_health -> Color(0xFFE1BEE7) // Lavender with alpha FF (full opacity)
+        QuestionnaireTypeEnum.anxiety -> Color(0xFF86C6E5) // Blue with alpha FF (full opacity)
+        QuestionnaireTypeEnum.depression -> Color(0xFF8BC34A) // Green with alpha FF (full opacity)
+        QuestionnaireTypeEnum.physical_health -> Color(0xFFE1BEE7) // Lavender with alpha FF (full opacity)
+        QuestionnaireTypeEnum.general_health -> Color(0xFFE57373) // Red with alpha FF (full opacity)
         else -> Color.Gray // Default color for unrecognized types
     }
 }

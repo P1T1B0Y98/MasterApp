@@ -1,0 +1,4 @@
+mutation QUESTIONNAIRES_RESPONSE_DELETE_ALL($userId: String!) {
+    questionnaireResponseDeleteAll(userId: $userId)
+}
+

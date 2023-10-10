@@ -10,7 +10,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import com.example.masterapp.data.roomDatabase.AnswerDatabase
+import com.example.masterapp.data.roomDatabase.QuestionnaireReminderDatabase
 import com.example.masterapp.data.roomDatabase.QuestionnaireReminder
 import com.example.masterapp.data.roomDatabase.QuestionnaireReminderDao
 import com.example.masterapp.presentation.MainActivity
@@ -19,7 +19,7 @@ class NotificationWorker(appContext: Context, workerParams: WorkerParameters)
     : CoroutineWorker(appContext, workerParams) {
 
     private val questionnaireReminderDao: QuestionnaireReminderDao =
-        AnswerDatabase.getDatabase(appContext).questionnaireReminderDao
+        QuestionnaireReminderDatabase.getDatabase(appContext).questionnaireReminderDao
     override suspend fun doWork(): Result {
         checkAndSendNotifications()
         return Result.success()
@@ -39,7 +39,7 @@ class NotificationWorker(appContext: Context, workerParams: WorkerParameters)
         val builder = NotificationCompat.Builder(applicationContext, "REMINDER_CHANNEL_ID")
             .setSmallIcon(R.mipmap.ic_launcher_foreground)
             .setContentTitle("Questionnaire available")
-            .setContentText("You can finally answer one of your questionnaires again!")
+            .setContentText("Ready for more? A questionnaire is available again!")
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)

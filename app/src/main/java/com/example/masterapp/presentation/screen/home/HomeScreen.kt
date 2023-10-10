@@ -32,7 +32,7 @@ fun HomeScreen(
     navController: NavController
 ) {
 
-    val dailyTip = DailyTips.getRandomTip()
+    val dailyTip = DailyTips.getTipOfTheDay()
 
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -50,7 +50,7 @@ fun HomeScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "Welcome to MindSync, ${AuthManager.getUserName()}. A new and innovative way of answering questionnaires.",
+            text = "Welcome to MindSync, ${AuthManager.getUserName()}. Your personal mental health assistant.",
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center,
@@ -124,7 +124,7 @@ fun HomeScreen(
                 .fillMaxWidth()
                 .padding(16.dp)
                 .border(2.dp, MaterialTheme.colors.primary, RoundedCornerShape(12.dp)),
-            backgroundColor = MaterialTheme.colors.secondary,
+            backgroundColor = Color.White,
             shape = RoundedCornerShape(12.dp),
             elevation = 4.dp
         ) {
@@ -138,7 +138,7 @@ fun HomeScreen(
                     style = MaterialTheme.typography.h6.copy(
                         fontWeight = FontWeight.Bold,
                         textDecoration = TextDecoration.Underline,
-                        color = Color.White
+                        color = MaterialTheme.colors.primary
                     )
                 )
 
@@ -147,7 +147,7 @@ fun HomeScreen(
                 Text(
                     text = dailyTip,
                     style = MaterialTheme.typography.body1,
-                    color = Color.White
+                    color = MaterialTheme.colors.primary
                 )
             }
         }

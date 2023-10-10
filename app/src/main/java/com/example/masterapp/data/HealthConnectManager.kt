@@ -38,6 +38,7 @@ import java.time.Instant
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 import kotlinx.coroutines.flow.Flow
+import java.util.UUID
 import kotlin.random.Random
 
 // The minimum android level that can use Health Connect
@@ -250,15 +251,39 @@ class HealthConnectManager(val context: Context) {
         )
         val response = healthConnectClient.readRecords(request)
 
-        return response.records.map { record ->
+        return createSampleHeartRateVariabilityData(start, end)
+       /* return response.records.map { record ->
             HeartRateVariabilityData(
                 heartRateVariability = record.heartRateVariabilityMillis,
                 id = record.metadata.id,
                 time = record.time,
-                sourceAppInfo = healthConnectCompatibleApps[record.metadata.dataOrigin.packageName]
             )
-        }
+        }*/
     }
+
+    fun createSampleHeartRateVariabilityData(start: Instant, end: Instant): List<HeartRateVariabilityData> {
+        val testData = mutableListOf<HeartRateVariabilityData>()
+
+        // Generate a range of timestamps for testing
+        val step = Duration.ofMinutes(15) // Simulate data every 15 minutes
+
+        var currentTimestamp = start
+
+        while (currentTimestamp.isBefore(end)) {
+            // Simulate heart rate variability data
+            val testDataPoint = HeartRateVariabilityData(
+                heartRateVariability = (60 + (Math.random() * 40)), // Random HRV value between 60 and 100
+                id = UUID.randomUUID().toString(), // Generate a random UUID as ID
+                time = currentTimestamp, // Replace with your app info or leave it as is
+            )
+
+            testData.add(testDataPoint)
+            currentTimestamp = currentTimestamp.plus(step)
+        }
+
+        return testData
+    }
+
 
     suspend fun readHeartRateRecord(start: Instant, end: Instant): HeartRateMetrics {
         val request = ReadRecordsRequest(
@@ -356,29 +381,7 @@ class HealthConnectManager(val context: Context) {
             avgSpeed = aggregateData[SpeedRecord.SPEED_AVG],
         )
     }
-    /**
-     * Reads in existing [WeightRecord]s.
-     */
-    suspend fun readWeightInputs(start: Instant, end: Instant): List<WeightRecord> {
-        val request = ReadRecordsRequest(
-            recordType = WeightRecord::class,
-            timeRangeFilter = TimeRangeFilter.between(start, end)
-        )
-        val response = healthConnectClient.readRecords(request)
-        return response.records
-    }
 
-    /**
-     * Returns the weekly average of [WeightRecord]s.
-     */
-    suspend fun computeWeeklyAverage(start: Instant, end: Instant): Mass? {
-        val request = AggregateRequest(
-            metrics = setOf(WeightRecord.WEIGHT_AVG),
-            timeRangeFilter = TimeRangeFilter.between(start, end)
-        )
-        val response = healthConnectClient.aggregate(request)
-        return response[WeightRecord.WEIGHT_AVG]
-    }
 
     /**
      * Convenience function to reuse code for reading data.

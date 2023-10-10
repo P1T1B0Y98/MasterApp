@@ -21,6 +21,25 @@ class QuestionnaireReminderViewModel (
         }
         return remindersLiveData
     }
+
+    fun getQuestionnaireReminder(userId: String, questionnaireId: String): LiveData<QuestionnaireReminder> {
+        val reminderLiveData = MutableLiveData<QuestionnaireReminder>()
+        viewModelScope.launch {
+            reminderLiveData.value = repository.getQuestionnaire(userId, questionnaireId)
+        }
+        return reminderLiveData
+    }
+
+    fun updateQuestionnaireReminder(reminder: QuestionnaireReminder) = viewModelScope.launch {
+        repository.updateReminder(reminder)
+    }
+    fun deleteReminder(userId: String, questionnaireId: String) = viewModelScope.launch {
+        repository.deleteReminder(userId, questionnaireId)
+    }
+
+    fun deleteAllReminders(userId: String) = viewModelScope.launch {
+        repository.deleteAllReminders(userId)
+    }
 }
 
 

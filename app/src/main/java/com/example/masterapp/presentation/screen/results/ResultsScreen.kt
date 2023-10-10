@@ -29,7 +29,7 @@ fun ResultsScreen(
             Log.i("ResultsScreen", "Displaying results")
             val answers = (viewModel.uiState.value
                     as ResultsViewModel.ResultsUiState.Success).answers
-            ResultsList(answers) { selectedAnswer ->
+            ResultsList(answers, viewModel = viewModel) { selectedAnswer ->
                 viewModel.onAnswerSelected(selectedAnswer) // This function needs to be defined in your ViewModel
             }
         }
