@@ -18,8 +18,8 @@ class AnswerAssessmentViewModelFactory(
 
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(AnswerAssessmentViewModel::class.java)) {
-            return AnswerAssessmentViewModel(healthConnectManager,
-                answerViewModel,
+            return AnswerAssessmentViewModel(
+                healthConnectManager,
                 sharedViewModel,
                 questionnaireReminderViewModel,
                 apolloClient) as T

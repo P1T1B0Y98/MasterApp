@@ -12,24 +12,18 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.example.masterapp.presentation.theme.awakeColor
-import com.example.masterapp.presentation.theme.blueColor
 import com.example.masterapp.presentation.theme.deepSleepColor
-import com.example.masterapp.presentation.theme.greenColor
 import com.example.masterapp.presentation.theme.lightSleepColor
-import com.example.masterapp.presentation.theme.redColor
 import com.example.masterapp.presentation.theme.remColor
-import com.example.masterapp.presentation.theme.yellowColor
 import com.github.mikephil.charting.charts.PieChart
 import com.github.mikephil.charting.data.PieData
 import com.github.mikephil.charting.data.PieDataSet
 import com.github.mikephil.charting.data.PieEntry
-import com.github.mikephil.charting.utils.ColorTemplate
 import com.github.mikephil.charting.components.Legend
 import com.github.mikephil.charting.formatter.ValueFormatter
 
 @Composable
 fun PieChartComposable(data: List<ChartData>) {
-    val context = LocalContext.current
 
     AndroidView(
         modifier = Modifier
@@ -87,7 +81,6 @@ fun getColorForStage(stage: String): Color {
         "Light" -> lightSleepColor
         "REM" -> remColor
         "Deep" -> deepSleepColor
-        // Add more stages as necessary
-        else -> Color.Gray // Default color if the stage isn't recognized
+        else -> Color.Gray 
     }
 }

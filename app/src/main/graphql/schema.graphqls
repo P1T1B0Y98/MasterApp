@@ -153,6 +153,7 @@ type QuestionnairesPage {
 type Questionnaire {
     id: String!
     title: String!
+    description: String!
     repeats: String!
     status: String!
     subjectType: String!
@@ -678,7 +679,7 @@ enum QuestionEnum {
 
     confirm
 
-    smartwatch_data
+    wearable
 }
 
 type RuleType {
@@ -1135,7 +1136,7 @@ type QuestionnaireResponse {
 
     item: JSON
 
-    createdAt: DateTime
+    authored: String
 
     subject: User
 }

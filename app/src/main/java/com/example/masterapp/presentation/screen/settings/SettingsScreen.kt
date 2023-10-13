@@ -5,9 +5,6 @@ import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,8 +21,6 @@ import com.example.masterapp.R
 import com.example.masterapp.data.HealthConnectManager
 import com.example.masterapp.presentation.component.MyCard
 import com.example.masterapp.presentation.navigation.Screen
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
@@ -40,6 +35,7 @@ fun SettingsScreen(
     val notificationSettingsManager = NotificationSettingsManager(activity)
     val coroutineScope = rememberCoroutineScope()
     var showDialog by remember { mutableStateOf(false) }
+
 
     LazyColumn(
         modifier = Modifier

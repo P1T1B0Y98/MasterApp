@@ -1,8 +1,6 @@
 package com.example.masterapp.presentation.navigation
 import com.example.masterapp.R
 
-const val UID_NAV_ARGUMENT = "uid"
-
 /**
  * Represent all Screens in the app.
  *

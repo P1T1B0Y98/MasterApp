@@ -43,8 +43,8 @@ fun LoginScreen(viewModel: LoginViewModel,
                 onAboutUs: () -> Unit) {
 
     val keyboardController = LocalSoftwareKeyboardController.current
-    val emailState = remember { mutableStateOf("petter@petter.no") }
-    val passwordState = remember { mutableStateOf("wilshere") }
+    val emailState = remember { mutableStateOf("") }
+    val passwordState = remember { mutableStateOf("") }
     val coroutineScope = rememberCoroutineScope()
 
     Box(

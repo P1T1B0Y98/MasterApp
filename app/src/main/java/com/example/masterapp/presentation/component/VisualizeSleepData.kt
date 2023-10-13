@@ -1,6 +1,5 @@
 package com.example.masterapp.presentation.component
 
-import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -36,7 +35,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.masterapp.data.AnswerData
 import com.example.masterapp.data.SleepSessionData
 import com.example.masterapp.data.calculateSleepStagePercentages
 import com.example.masterapp.presentation.formatDuration
@@ -48,7 +46,7 @@ fun VisualizeSleepData(sleepData: List<SleepSessionData>) {
 
     val allSleepDays = sleepData.map { it.startTime.atZone(ZoneId.systemDefault()).toLocalDate() }.distinct()
     val showSnackbar = remember { mutableStateOf(false) }
-    val expandedState = remember { mutableStateOf(true) } // Initial state is expanded
+    val expandedState = remember { mutableStateOf(true) }
 
     val selectedDateState = remember { mutableStateOf(allSleepDays.firstOrNull()) }
     val selectedSleepSession = sleepData.find { it.startTime.atZone(ZoneId.systemDefault()).toLocalDate() == selectedDateState.value }

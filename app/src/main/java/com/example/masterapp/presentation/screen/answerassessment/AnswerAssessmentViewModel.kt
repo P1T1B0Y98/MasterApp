@@ -1,9 +1,7 @@
 package com.example.masterapp.presentation.screen.answerassessment
 
+import AuthManager
 import android.util.Log
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.AnimationVector1D
-import androidx.compose.animation.core.tween
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.health.connect.client.permission.HealthPermission
@@ -15,23 +13,17 @@ import com.apollographql.apollo3.ApolloClient
 import com.apollographql.apollo3.exception.ApolloException
 import com.example.masterapp.QUESTIONNAIRE_SUBMITMutation
 import com.example.masterapp.data.AnswerData
-import com.example.masterapp.data.AnswerInput
 import com.example.masterapp.data.Assessment
 import com.example.masterapp.data.AssessmentSchema
 import com.example.masterapp.data.EncryptionHelper
 import com.example.masterapp.data.ExerciseSession
-import com.example.masterapp.data.FHIRMeta
-import com.example.masterapp.data.FHIRQuestionnaireResponse
-import com.example.masterapp.data.FHIRQuestionnaireResponseAnswer
 import com.example.masterapp.data.FHIRQuestionnaireResponseItem
 import com.example.masterapp.data.HealthConnectManager
 import com.example.masterapp.data.HeartRateMetrics
 import com.example.masterapp.data.HeartRateVariabilityData
-import com.example.masterapp.data.Item
 import com.example.masterapp.data.SleepSessionData
 import com.example.masterapp.data.StressData
 import com.example.masterapp.data.dateTimeWithOffsetOrDefault
-import com.example.masterapp.data.roomDatabase.AnswerViewModel
 import com.example.masterapp.data.roomDatabase.QuestionnaireReminder
 import com.example.masterapp.data.roomDatabase.QuestionnaireReminderViewModel
 import com.example.masterapp.presentation.screen.SharedViewModel
@@ -46,16 +38,11 @@ import java.io.ByteArrayOutputStream
 import java.time.Instant
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.zip.GZIPOutputStream
 
-
-
-
 class AnswerAssessmentViewModel(
     private val healthConnectManager: HealthConnectManager,
-    private val answerViewModel: AnswerViewModel,
     private val sharedViewModel: SharedViewModel,
     private val questionnaireReminderViewModel: QuestionnaireReminderViewModel,
     private val apolloClient: ApolloClient
@@ -63,11 +50,11 @@ class AnswerAssessmentViewModel(
 
     private val _smartwatchDataCollected = MutableStateFlow(false)
     val smartwatchDataCollected: StateFlow<Boolean> = _smartwatchDataCollected
-    var sessionsList: MutableState<List<ExerciseSession>> = mutableStateOf(listOf())
-        private set
-    val questionsList = mutableListOf<Map<String, Any>>()
+    private var sessionsList: MutableState<List<ExerciseSession>> = mutableStateOf(listOf())
+
     sealed class AnswerAssessmentUiState {
         object Loading : AnswerAssessmentUiState()
+        data class Information(val assessment: Assessment) : AnswerAssessmentUiState()
         data class Success(val assessment: Assessment) : AnswerAssessmentUiState()
         object Error : AnswerAssessmentUiState()
         object Submitted : AnswerAssessmentUiState()
@@ -81,41 +68,23 @@ class AnswerAssessmentViewModel(
     // Add any necessary logic and data here to handle the assessment answers
     private val healthConnectCompatibleApps = healthConnectManager.healthConnectCompatibleApps
 
-    private val permissions = setOf(
-        HealthPermission.getReadPermission(HeartRateVariabilityRmssdRecord::class),
-        HealthPermission.getReadPermission(HeartRateRecord::class),
-    )
-
-    private var permissionsGranted = healthConnectManager.isPermissionGranted
-
     private fun getAssessment() {
         uiState.value = AnswerAssessmentUiState.Loading
 
         val assessment = sharedViewModel.getAssessment()
 
         if (assessment != null) {
-            uiState.value = AnswerAssessmentUiState.Success(assessment)
+            uiState.value = AnswerAssessmentUiState.Information(assessment)
         } else {
             uiState.value = AnswerAssessmentUiState.Error
         }
     }
 
-    fun addAnswer(questionIndex: Int, question: String, answer: Any) {
-        val updatedQuestion = questionsList.getOrNull(questionIndex)?.toMutableMap()
-
-        if (updatedQuestion != null) {
-            // Update the existing question entry with the new answer
-            updatedQuestion["answer"] = answer
-            questionsList[questionIndex] = updatedQuestion
-        } else {
-            // Add a new question entry with the provided question and answer
-            val newQuestionEntry = mapOf("id" to "q$questionIndex", "question" to question, "answer" to answer)
-            questionsList.add(newQuestionEntry)
-        }
-        Log.i("AnswerAssessmentViewModel", "Questions list: $questionsList")
+    fun answerAssessment (assessment: Assessment) {
+        uiState.value = AnswerAssessmentUiState.Success(assessment)
     }
 
-    suspend fun collectAndSendSmartwatchData(timeInterval: String?): StressData? {
+    suspend fun collectAndSendSmartwatchData(timeInterval: String?): StressData {
         val timeIntervalEnum = timeInterval?.let { mapDisplayValueToTimeInterval(it) }
         val startTime = timeIntervalEnum?.let { getStartTimeForInterval(it) }!!
         Log.i("StartTime", startTime.toString())
@@ -126,8 +95,8 @@ class AnswerAssessmentViewModel(
         // Store data or perform necessary operations
 
         val stressDataList = mutableListOf<StressData>()
-        hrvData?.let { stressDataList.add(StressData.HRVData(it)) }
-        heartRateData?.let { stressDataList.add(StressData.HRMetricsData(it)) }
+        hrvData.let { stressDataList.add(StressData.HRVData(it)) }
+        heartRateData.let { stressDataList.add(StressData.HRMetricsData(it)) }
 
         // Update the answer map with smartwatch data
         val collectedData = listOf(hrvData, heartRateData)
@@ -138,7 +107,7 @@ class AnswerAssessmentViewModel(
         // Log or send the collected data
         Log.i("HealthConnect Test", collectedData.toString())
 
-        return heartRateData?.let { StressData.HRVAndHRMetricsData(hrvData, it) }
+        return heartRateData.let { StressData.HRVAndHRMetricsData(hrvData, it) }
     }
 
 
@@ -173,15 +142,7 @@ class AnswerAssessmentViewModel(
         return sessionsList.value
     }
 
-    fun animateCardOffScreen(yOffset: Animatable<Float, AnimationVector1D>, onAnimationEnd: () -> Unit = {}) {
-        viewModelScope.launch {
-            yOffset.animateTo(targetValue = -2000f, animationSpec = tween(durationMillis = 500))
-            onAnimationEnd()
-        }
-    }
-
-
-    private fun getExerciseTypeConstantName(exerciseType: Int): String? {
+    private fun getExerciseTypeConstantName(exerciseType: Int): String {
         return when (exerciseType) {
             2 -> "EXERCISE_TYPE_BADMINTON"
             4 -> "EXERCISE_TYPE_BASEBALL"
@@ -253,24 +214,19 @@ class AnswerAssessmentViewModel(
         return healthConnectManager.readHeartRateVariabilityRecord(startTime, endTime)
     }
 
-    private suspend fun readHeartRateData(startTime: Instant, endTime: Instant): HeartRateMetrics? {
+    private suspend fun readHeartRateData(startTime: Instant, endTime: Instant): HeartRateMetrics {
         // Read heart rate data from the device
         return healthConnectManager.readHeartRateRecord(startTime, endTime)
     }
 
-
     fun saveAnswersToDatabase(
         userId: String,
         assessmentId: String,
-        assessmentTitle: String,
-        assessmentType: String,
         timestamp: ZonedDateTime,
         frequency: String,
         answerMap: Map<Int, AnswerData>,
         questions: List<AssessmentSchema>
     ) {
-
-        Log.i("AnswerMap", answerMap.toString())
 
         val items = answerMap.map { (questionIndex, answers) ->
             val question = questions.getOrNull(questionIndex)
@@ -285,31 +241,9 @@ class AnswerAssessmentViewModel(
                 answer = answers
             )
         }
-        val questionsList = answerMap.map { (questionIndex, answers) ->
-            Log.i("Answers", answers.toString())
-            val question = questions.getOrNull(questionIndex)
-            val questionId = question?.linkId ?: "Question not found"
-            val questionType = question?.type?.name ?: "Unknown"
-            val questionText = question?.question ?: "Question not found"
-
-            AnswerInput(
-                linkId = questionId,
-                questionType = questionType,
-                question = questionText,
-                answer = answers
-            )
-        }
-
-        Log.i("Question List", questionsList.toString())
-
-
-        Log.i("AnswerAssessmentViewModel", "formData: $items")
 
         // Convert formData to a JSON string
         val serializedFormData = Json.encodeToString(items)
-
-        Log.i("AnswerAssessmentViewModel", "formDataMap: $serializedFormData")
-
 
         // Compress the serializedFormData using GZIP
         val compressedFormData = compressStringToGZIP(serializedFormData)
@@ -320,8 +254,6 @@ class AnswerAssessmentViewModel(
         // Encrypt the base64 encoded compressed data
         val encryptedFormData = EncryptionHelper.encrypt(base64CompressedFormData)
 
-        // Now use enc  ryptedFormData for your mutation
-        Log.i("AnswerAssessmentViewModel", "Encrypted form data: $encryptedFormData")
         val encryptedInput = QuestionnaireResponseInput(
             resourceType = "QuestionnaireResponse",
             questionnaire = assessmentId,
@@ -335,31 +267,25 @@ class AnswerAssessmentViewModel(
                 source = "Android"
 
             )
-
         )
-
-
-        Log.i("SerializedFormData", serializedFormData)
-        Log.i("AnswerAssessmentViewModel", "Input data encrypted: $encryptedInput")
 
         viewModelScope.launch {
             try {
                 val response =
-                    apolloClient.mutate(QUESTIONNAIRE_SUBMITMutation(data = encryptedInput)).execute()
+                    apolloClient.mutation(QUESTIONNAIRE_SUBMITMutation(data = encryptedInput)).execute()
                 Log.i("GraphQL", "Response: $response")
                 if (response.hasErrors()) {
                     // Handle GraphQL errors
                     val errors = response.errors?.joinToString(", ") { it.message }
                     Log.e("GraphQL", "Errors: $errors")
                 } else {
-                    Log.i("GraphQL", frequency.toString())
+                    Log.i("GraphQL", frequency)
 
 
-                    val notificationTimestamp = frequency?.let { getFrequencyForInterval(it, timestamp) } !!
+                    val notificationTimestamp = getFrequencyForInterval(frequency, timestamp)
                     Log.i("Noti Timestamp", notificationTimestamp.toString())
                     val timestampUtc = timestamp.withZoneSameInstant(ZoneOffset.UTC).toInstant()
                     Log.i("Timestamp", timestampUtc.toString())
-                    val reminders = questionnaireReminderViewModel.getQuestionnaireReminder(assessmentId, userId)
                     val reminder = QuestionnaireReminder(
                         id = assessmentId.hashCode(),
                         userId = userId,
@@ -367,26 +293,17 @@ class AnswerAssessmentViewModel(
                         notificationTimestamp = notificationTimestamp.toEpochMilli(),
                         completedTimestamp = timestampUtc.toEpochMilli(),
                     )
+                    val reminders = questionnaireReminderViewModel.getQuestionnaireReminder(AuthManager.getUserId(), assessmentId)
                     if (reminders != null) {
                         questionnaireReminderViewModel.updateQuestionnaireReminder(reminder)
                     } else {
                         questionnaireReminderViewModel.insertReminder(reminder)
                     }
-                    // Handle successful response
-                    questionnaireReminderViewModel.insertReminder(
-                        QuestionnaireReminder(
-                            userId = userId,
-                            questionnaireId = assessmentId,
-                            notificationTimestamp = notificationTimestamp.toEpochMilli(),
-                            completedTimestamp = timestampUtc.toEpochMilli(),
-                        )
-                    )
-                    // Update UI state to submitted
+
                     uiState.value = AnswerAssessmentUiState.Submitted
                 }
             } catch (e: ApolloException) {
                 // Handle the exception
-                Log.e("GraphQL", "Failed to submit data", e)
                 Log.e("GraphQL", "Failed to submit data", e)
             }
         }

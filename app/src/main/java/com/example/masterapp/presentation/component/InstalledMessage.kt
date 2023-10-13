@@ -8,9 +8,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.example.masterapp.R
 import com.example.masterapp.presentation.theme.MasterAppTheme
 
-/**
- * Welcome text shown when the app first starts, where the Healthcore APK is already installed.
- */
 @Composable
 fun InstalledMessage() {
     Text(

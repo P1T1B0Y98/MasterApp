@@ -1,7 +1,6 @@
 package com.example.masterapp.presentation.component
 
 import HRVLineChart
-import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -34,7 +33,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.masterapp.data.AnswerData
 import com.example.masterapp.data.StressData
 import com.example.masterapp.R
 import com.example.masterapp.presentation.formatDateAndTime
@@ -44,7 +42,7 @@ fun VisualizeStressData(
     stressData: StressData,
 ) {
     val showInfoSnackbar = remember { mutableStateOf(false) }
-    val isContentVisible = remember { mutableStateOf(true) } // Determines if content is expanded or shrunk
+    val isContentVisible = remember { mutableStateOf(true) }
 
     Card(
         shape = RoundedCornerShape(16.dp),

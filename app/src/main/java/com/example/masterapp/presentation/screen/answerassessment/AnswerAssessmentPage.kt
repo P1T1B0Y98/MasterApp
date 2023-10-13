@@ -20,7 +20,11 @@ fun AnswerAssessmentPage(
         is AnswerAssessmentViewModel.AnswerAssessmentUiState.Loading -> {
             // Display a loading indicator while loading the assessment
             Text(text = "Loading assessment...", color = Color.Black)
-
+        }
+        is AnswerAssessmentViewModel.AnswerAssessmentUiState.Information -> {
+            // Display the assessment information
+            val assessment = (viewModel.uiState.value as AnswerAssessmentViewModel.AnswerAssessmentUiState.Information).assessment
+            AnswerAssessmentInformation(assessment, viewModel, onGoToAssessments)
         }
         is AnswerAssessmentViewModel.AnswerAssessmentUiState.Success -> {
             // Display the assessment questions
@@ -36,6 +40,8 @@ fun AnswerAssessmentPage(
             AnswersSubmitted(onGoToResults, onGoToAssessments)
                 
         }
+
+        else -> {}
     }
 }
 

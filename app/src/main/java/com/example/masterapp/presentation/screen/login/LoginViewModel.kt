@@ -44,7 +44,7 @@ class LoginViewModel(
         val response = try {
             apolloClient.query(AUTH_MEQuery()).execute()
         } catch (e: ApolloException) {
-            // Handle the error, such as logging or displaying an error message
+            Log.w("Fail", "Failed to fetch user profile", e)
             null
         }
 
@@ -59,11 +59,6 @@ class LoginViewModel(
                 firstName = authMe.firstName,
                 email = authMe.email
             )
-            Log.d("User Profile", "ID: ${userProfile.id}")
-            Log.d("User Profile", "Authentication UID: ${userProfile.authenticationUid}")
-            Log.d("User Profile", "Full Name: ${userProfile.fullName}")
-            Log.d("User Profile", "First Name: ${userProfile.firstName}")
-            Log.d("User Profile", "Email: ${userProfile.email}")
 
             AuthManager.setUserProfile(userProfile)
 

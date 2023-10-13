@@ -1,9 +1,5 @@
 package com.example.masterapp.presentation.screen.answerassessment
 
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,14 +11,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
+import androidx.compose.material.Icon
 import androidx.compose.material.LinearProgressIndicator
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -38,12 +37,12 @@ import kotlinx.coroutines.delay
 @Composable
 fun AnswersSubmitted(onGoToResults: () -> Unit, onGoToAssessments: () -> Unit) {
     var loadingComplete by remember { mutableStateOf(false) }
-    var progressValue by remember { mutableStateOf(0f) }
+    var progressValue by remember { mutableFloatStateOf(0f) }
 
     LaunchedEffect(key1 = Unit) {
         while (progressValue < 1f) {
-            delay(100)  // this will determine the speed of loading. Adjust as needed.
-            progressValue += 0.10f  // this will determine the step of increment. Adjust as needed.
+            delay(100)  
+            progressValue += 0.10f
         }
         loadingComplete = true
     }
@@ -51,11 +50,15 @@ fun AnswersSubmitted(onGoToResults: () -> Unit, onGoToAssessments: () -> Unit) {
     if (!loadingComplete) {
         Box(
             contentAlignment = Alignment.Center,
-            modifier = Modifier.fillMaxSize().background(color = MaterialTheme.colors.primary)
+            modifier = Modifier
+                .fillMaxSize()
+                .background(color = MaterialTheme.colors.primary)
         ) {
             LinearProgressIndicator(
                 progress = progressValue,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
                 color = Color.White,
             )
         }
@@ -63,16 +66,21 @@ fun AnswersSubmitted(onGoToResults: () -> Unit, onGoToAssessments: () -> Unit) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top,
-            modifier = Modifier.fillMaxSize().background(color = MaterialTheme.colors.primary)
+            modifier = Modifier
+                .fillMaxSize()
+                .background(color = MaterialTheme.colors.primary)
         ) {
             Spacer(modifier = Modifier.height(100.dp))
-            Image(
-                painter = painterResource(id = R.mipmap.ic_launcher_foreground_dup),
-                contentDescription = null,
-                modifier = Modifier.size(150.dp)
+            Icon(
+                painter = painterResource(id = R.drawable.relaxed_01),
+                contentDescription = "Questionnaire",
+                modifier = Modifier
+                    .padding(8.dp)
+                    .size(150.dp),
+                tint = Color.White
             )
             Text(
-                text = "Thank you for completing the questionnaire. Be proud of yourself!",
+                text = "Great Job. Be proud of yourself! Go to results to see a visualization of your data",
                 style = MaterialTheme.typography.h5,
                 textAlign = TextAlign.Center,
                 color = Color.White,
@@ -82,36 +90,42 @@ fun AnswersSubmitted(onGoToResults: () -> Unit, onGoToAssessments: () -> Unit) {
 
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
             ){
-                Button(
-                    onClick = onGoToResults,
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(100.dp)// equally distribute space
-                        .padding(end = 8.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        backgroundColor = Color.White,
-                        contentColor = MaterialTheme.colors.primary
-                    )
-                ) {
-                    Text(text = "Go to Results")
-                }
 
                 Button(
                     onClick = onGoToAssessments,
                     modifier = Modifier
                         .weight(1f)
-                        .height(100.dp)// equally distribute space
+                        .height(100.dp)
                         .padding(start = 8.dp),
                     colors = ButtonDefaults.buttonColors(
                         backgroundColor = Color.White,
                         contentColor = MaterialTheme.colors.primary
                     )
                 ) {
-                    Text(text = "Answer More Questionnaires", color = MaterialTheme.colors.primary)
+                    Text(text = "Questionnaires", color = MaterialTheme.colors.primary)
+                }
+
+                Spacer(modifier = Modifier.width(30.dp))
+
+                Button(
+                    onClick = onGoToResults,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(100.dp)
+                        .padding(end = 8.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        backgroundColor = Color.White,
+                        contentColor = MaterialTheme.colors.primary
+                    )
+                ) {
+                    Text(text = "Results")
                 }
             }
+
         }
     }
 }

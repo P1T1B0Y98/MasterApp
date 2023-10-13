@@ -7,14 +7,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.animation.Crossfade
 import androidx.compose.material.ScaffoldState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
@@ -55,7 +48,6 @@ import com.example.masterapp.presentation.screen.settings.SettingsScreenViewMode
 import com.example.masterapp.presentation.screen.setup.SetupScreen
 import com.example.masterapp.presentation.screen.setup.SetupScreenViewModel
 import com.example.masterapp.presentation.screen.setup.SetupScreenViewModelFactory
-import kotlinx.coroutines.launch
 
 /**
  * Provides the navigation in the app.
@@ -64,18 +56,13 @@ import kotlinx.coroutines.launch
 fun AppNavigator(
     navController: NavHostController,
     healthConnectManager: HealthConnectManager,
-    scaffoldState: ScaffoldState,
     authManager: AuthManager,
     notificationSettingsManager: NotificationSettingsManager,
 ) {
-    Log.i("AppNavigator", "AppNavigator")
-    Log.i("HealthConnectManagerPackage", healthConnectManager.context.packageManager.toString())
-    val scope = rememberCoroutineScope()
+
     val sharedViewModel: SharedViewModel = viewModel()
-    // Get the ApolloClient instance from the BaseApplication
     val app = LocalContext.current.applicationContext as BaseApplication
     val apolloClient = app.apolloClient
-    val myHealthConnectManager = app.healthConnectManager
     val answerViewModelFactory = AnswerViewModelFactory(app.questionnaireReminderDatabase.questionnaireReminderDao)
     val answerViewModel: AnswerViewModel = viewModel(factory = answerViewModelFactory)
     val dao = app.questionnaireReminderDatabase.questionnaireReminderDao/* initialize or retrieve your DAO here */
@@ -99,7 +86,7 @@ fun AppNavigator(
     val startDestination = when {
         !isLoggedIn -> Screen.LoginScreen.route
         isLoggedIn && !hasCompletedSetup -> Screen.SetupScreen.route
-        else -> Screen.HomeScreen.route  // or whichever is the primary screen post-login
+        else -> Screen.HomeScreen.route
     }
 
     NavHost(navController = navController, startDestination = startDestination) {
@@ -143,7 +130,6 @@ fun AppNavigator(
             val onPermissionsResult = { viewModel.initialLoad() }
             val permissionsLauncher =
                 rememberLauncherForActivityResult(viewModel.permissionsLauncher) {
-                    Log.i("AppNavigator", "Permissions result: $it")
                     onPermissionsResult()
                 }
 
@@ -151,7 +137,6 @@ fun AppNavigator(
                 SetupScreen(
                     uiState = viewModel.uiState,
                     onPermissionsLaunch = { values ->
-                        Log.d("WelcomeScreen", "Requesting permissions: $values")  // <-- Add this log
                         permissionsLauncher.launch(values)
                     },
                     viewModel = viewModel,
@@ -182,7 +167,6 @@ fun AppNavigator(
             val onPermissionsResult = { assessmentViewModel.initialLoad() }
             val permissionsLauncher =
                 rememberLauncherForActivityResult(assessmentViewModel.permissionsLauncher) {
-                    Log.i("AppNavigator", "Permissions result: $it")
                     onPermissionsResult()
                 }
 
@@ -266,7 +250,6 @@ fun AppNavigator(
 
             val permissionsLauncher =
                 rememberLauncherForActivityResult(viewModel.permissionsLauncher) {
-                    Log.i("AppNavigator", "Permissions result: $it")
                     onPermissionsResult()
 
                 }
@@ -275,7 +258,6 @@ fun AppNavigator(
                 SettingsScreen(
                     healthConnectManager = healthConnectManager,
                     onPermissionsLaunch = { values ->
-                        Log.d("WelcomeScreen", "Requesting permissions: $values")  // <-- Add this log
                         permissionsLauncher.launch(values)
                     },
                     viewModel = viewModel,
@@ -309,9 +291,6 @@ private fun navigateToWelcomeScreen(navController: NavHostController) {
     }
 }
 
-private suspend fun permissionGranted(healthConnectManager: HealthConnectManager): Boolean {
-    return healthConnectManager.hasAllPermissions(healthConnectManager.permissions)
-}
 
 private fun navigateToRegisterScreen(navController: NavHostController) {
     navController.navigate(Screen.RegisterScreen.route)

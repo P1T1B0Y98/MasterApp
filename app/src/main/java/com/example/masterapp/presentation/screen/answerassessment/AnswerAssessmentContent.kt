@@ -26,12 +26,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.Card
-import androidx.compose.material.Checkbox
 import androidx.compose.material.CircularProgressIndicator
-import androidx.compose.material.Divider
-import androidx.compose.material.LinearProgressIndicator
 import androidx.compose.material.MaterialTheme
-import androidx.compose.material.RadioButton
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -60,11 +56,16 @@ import com.example.masterapp.R
 import com.example.masterapp.data.AnswerData
 import com.example.masterapp.data.Assessment
 import com.example.masterapp.data.AssessmentSchema
+import com.example.masterapp.data.FhirCodeableConcept
+import com.example.masterapp.data.FhirCoding
+import com.example.masterapp.data.FhirObservation
+import com.example.masterapp.data.FhirValueObject
 import com.example.masterapp.presentation.screen.SharedViewModel
 import com.example.masterapp.presentation.theme.lightSleepColor
 import com.example.masterapp.type.QuestionEnum
 import kotlinx.coroutines.delay
 import java.time.ZonedDateTime
+import java.time.temporal.ChronoUnit
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -79,18 +80,12 @@ fun AnswerAssessmentContent(
     var isAnswered by remember { mutableStateOf(true) }
     val isLastQuestion = currentQuestionIndex == questions.size - 1
     var isDataCollected by remember { mutableStateOf(false) }
-
     val smartwatchQuestionsIndices = questions.mapIndexedNotNull { index, question ->
-        if (question.type == QuestionEnum.smartwatch_data) index else null
+        if (question.type == QuestionEnum.wearable) index else null
     }
-
     val keyboardController = LocalSoftwareKeyboardController.current
-
-
     val smartwatchDataCollected by viewModel.smartwatchDataCollected.collectAsState()
     val currentQuestion = questions[currentQuestionIndex]
-
-    var collectedSmartwatchData: List<String> by remember { mutableStateOf(emptyList()) }
 
     if (smartwatchQuestionsIndices.contains(currentQuestionIndex) && !smartwatchDataCollected) {
         LaunchedEffect(currentQuestionIndex) {
@@ -102,28 +97,92 @@ fun AnswerAssessmentContent(
                 currentQuestion.options?.find { it.label == "timeIntervalOption" }?.value
 
             when (dataOption) {
+
                 "Stress" -> {
                     val data = viewModel.collectAndSendSmartwatchData(timeInterval)
+                    Log.i("Data", data.toString())
+                    val stressData = data?.let { AnswerData.Stress(it) }
+
                     answerMap[currentQuestionIndex] =
-                        data?.let { AnswerData.Stress(it, "application/json") }!!
+                        stressData?.let { AnswerData.FHIROBSERVATION(
+                            FhirObservation(
+                                resourceType = "Observation",
+                                status = "final",
+                                subject = AuthManager.getUserId(),
+                                effectiveDateTime = ZonedDateTime.now().minus(3, ChronoUnit.MONTHS).toString(),
+                                code = FhirCodeableConcept(
+                                    coding = listOf(
+                                        FhirCoding(
+                                            system = null,
+                                            display = "Stress"
+                                        )
+                                    ),
+                                    text = "Stress Data"
+                                ),
+                                value = FhirValueObject(
+                                    data = it,
+                                    origin = "Android"
+                                )
+                            )
+                        ) }!!
+
                 }
 
                 "Sleep" -> {
                     val data = viewModel.readSleepData(timeInterval)
+                    val sleepData = data?.let { AnswerData.Sleep(it) }
                     answerMap[currentQuestionIndex] =
-                        data?.let { AnswerData.Sleep(it, "application/json") }!!
+                        sleepData?.let { AnswerData.FHIROBSERVATION(
+                            FhirObservation(
+                                resourceType = "Observation",
+                                status = "final",
+                                subject = AuthManager.getUserId(),
+                                effectiveDateTime = ZonedDateTime.now().minus(3, ChronoUnit.MONTHS).toString(),
+                                code = FhirCodeableConcept(
+                                    coding = listOf(
+                                        FhirCoding(
+                                            system = null,
+                                            display = "Sleep"
+                                        )
+                                    ),
+                                    text = "Sleep Data"
+                                ),
+                                value = FhirValueObject(
+                                    data = it,
+                                    origin = "Android"
+                                )
+                            )
+                        ) }!!
                 }
 
                 "Exercise" -> {
                     val data = viewModel.readExerciseSessionsData(timeInterval)
+                    val exerciseData = data?.let { AnswerData.Exercise(it) }
                     answerMap[currentQuestionIndex] =
-                        data?.let { AnswerData.Exercise(it, "application/json") }!!
+                        exerciseData?.let { AnswerData.FHIROBSERVATION(
+                        FhirObservation(
+                            resourceType = "Observation",
+                            status = "final",
+                            subject = AuthManager.getUserId(),
+                            effectiveDateTime = ZonedDateTime.now().minus(3, ChronoUnit.MONTHS).toString(),
+                            code = FhirCodeableConcept(
+                                coding = listOf(
+                                    FhirCoding(
+                                        system = null,
+                                        display = "Physical Activity"
+                                    )
+                                ),
+                                text = "Physical Activity Data"
+                            ),
+                            value = FhirValueObject(
+                                data = it,
+                                origin = "Android"
+                            )
+                        )
+                    ) }!!
                 }
             }
 
-            for ((questionIndex, answerData) in answerMap) {
-                Log.i("AnswerMap", "Question Index: $questionIndex, Answer: $answerData")
-            }
             isDataCollected = true
         }
     }
@@ -141,7 +200,6 @@ fun AnswerAssessmentContent(
         }
     ) {
         Column(
- // Add top padding here
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -154,17 +212,17 @@ fun AnswerAssessmentContent(
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
-        // Increase the size of the card to take up most of the screen
+
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(0.7f) // 80% of the screen height
+                .fillMaxHeight(0.7f)
         ) {
 
             if (!isLastQuestion) {
                 Card(
                     modifier = Modifier
-                        .fillMaxSize() // 80% of the screen height
+                        .fillMaxSize()
                         .padding(20.dp)
                         .offset(10.dp, 10.dp),
                     shape = RoundedCornerShape(16.dp),
@@ -175,7 +233,7 @@ fun AnswerAssessmentContent(
             }
             Card(
                 modifier = Modifier
-                    .fillMaxSize() // 80% of the screen height
+                    .fillMaxSize()
                     .padding(20.dp),
                 shape = RoundedCornerShape(16.dp),
                 elevation = 8.dp,
@@ -192,7 +250,6 @@ fun AnswerAssessmentContent(
                     if (currentQuestionIndex < questions.size) {
                         val currentQuestion = questions[currentQuestionIndex]
 
-                        // Display the current question index and total number of questions
                         Row (
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -228,7 +285,7 @@ fun AnswerAssessmentContent(
                         )
 
                         if (currentQuestion != null) {
-                            // Display the current question
+
                             Text(
                                 text = currentQuestion.question ?: "",
                                 fontWeight = FontWeight.Bold,
@@ -240,10 +297,10 @@ fun AnswerAssessmentContent(
 
                             Spacer(modifier = Modifier.height(16.dp))
                             val placeholderText = "Type your answer here..."
-                            // Check the type of the question and render the appropriate input UI
+
                             when (currentQuestion.type) {
                                 QuestionEnum.input, QuestionEnum.textarea, QuestionEnum.date, QuestionEnum.time, QuestionEnum.confirm -> {
-                                    // Render an input field (BasicTextField) for text-based inputs
+
                                     val currentAnswer = answerMap[currentQuestionIndex]?.let {
                                         if (it is AnswerData.Textual) it.value.first() else ""
                                     } ?: ""
@@ -268,24 +325,24 @@ fun AnswerAssessmentContent(
                                         ),
                                         keyboardActions = KeyboardActions(
                                             onDone = {
-                                                // Move to the next question
+
                                                 keyboardController?.hide()
                                             }
                                         ),
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .fillMaxHeight() // Set the height of the BasicTextField to make it bigger
-                                            .padding(8.dp),// Add grey border around the input field
+                                            .fillMaxHeight()
+                                            .padding(8.dp),
                                         decorationBox = { innerTextField ->
                                             Box(
-                                                modifier = Modifier // margin left and right
+                                                modifier = Modifier
                                                     .fillMaxWidth()
                                                     .border(
                                                         width = 2.dp,
                                                         color = MaterialTheme.colors.primary,
                                                         shape = RoundedCornerShape(size = 16.dp)
                                                     )
-                                                    .padding(horizontal = 16.dp, vertical = 12.dp), // inner padding
+                                                    .padding(horizontal = 16.dp, vertical = 12.dp),
                                             ) {
                                                 if (currentAnswer.isEmpty()) {
                                                     Text(
@@ -297,7 +354,7 @@ fun AnswerAssessmentContent(
                                                 }
                                                 innerTextField()
                                             }
-                                        }// Set the background color of the BasicTextField
+                                        }
                                     )
                                 }
 
@@ -310,26 +367,26 @@ fun AnswerAssessmentContent(
                                         modifier = Modifier
                                             .fillMaxWidth()
                                     )
-                                    // Render radio or select options based on the question options
+
                                     val selectedOptions: List<String> =
                                         when (val answer = answerMap[currentQuestionIndex]) {
                                             is AnswerData.Textual -> answer.value
-                                            // If there are other AnswerData types that could be relevant here, handle them.
+
                                             else -> emptyList()
                                         }
 
                                     currentQuestion.options?.let { options ->
                                         options.forEach { option ->
                                             val isSelected = option.value in selectedOptions
-                                            // Render radio buttons for the options
+
                                             Row(
                                                 verticalAlignment = Alignment.CenterVertically,
                                                 modifier = Modifier
                                                     .fillMaxWidth()
                                                     .weight(1f)
-                                                    .padding(start = 15.dp, end = 15.dp)// Distribute equal weight to each option
+                                                    .padding(start = 15.dp, end = 15.dp)
                                                     .clickable {
-                                                        // Since this is a radio button behavior, update the selected options to just the clicked option
+
                                                         val updatedOptions = listOf(option.value)
                                                         val updatedAnswerData = AnswerData.Textual(updatedOptions, "string")
                                                         answerMap[currentQuestionIndex] = updatedAnswerData
@@ -339,15 +396,15 @@ fun AnswerAssessmentContent(
                                                     modifier = Modifier
                                                         .weight(1f) // Equal width distribution
                                                         .background(
-                                                            color = if (isSelected) lightSleepColor else Color(0xFFF2F2F2), // Change colors as needed
+                                                            color = if (isSelected) lightSleepColor else Color(0xFFF2F2F2),
                                                             shape = RoundedCornerShape(16.dp)
                                                         )
                                                         .padding(16.dp)
                                                 ) {
                                                     Text(
                                                         text = option.value ?: "",
-                                                        color = if (isSelected) MaterialTheme.colors.primary else Color.Gray, // Change text color as needed
-                                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal // Change font weight as needed
+                                                        color = if (isSelected) MaterialTheme.colors.primary else Color.Gray,
+                                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                                                     )
                                                 }
                                             }
@@ -357,7 +414,7 @@ fun AnswerAssessmentContent(
                                 }
 
                                 QuestionEnum.checkbox -> {
-                                    // Get the selected options from the answerMap
+
                                     val selectedOptions: List<String> =
                                         when (val answer = answerMap[currentQuestionIndex]) {
                                             is AnswerData.Textual -> answer.value
@@ -376,10 +433,10 @@ fun AnswerAssessmentContent(
                                     currentQuestion.options?.let { options ->
                                         options.forEach { option ->
                                             val isSelected = option.value in selectedOptions
-                                            // Render buttons for the options that look selected or deselected based on the current state
+
                                             Button(
                                                 onClick = {
-                                                    // Update the selected options based on button click
+
                                                     val updatedOptions = if (isSelected) {
                                                         selectedOptions - option.value
                                                     } else {
@@ -409,8 +466,8 @@ fun AnswerAssessmentContent(
                                 }
 
 
-                                QuestionEnum.smartwatch_data -> {
-                                    // If the question is of type "smartwatch_data", skip it and move to the next question
+                                QuestionEnum.wearable -> {
+                                    // If the question is of type "wearable", skip it and move to the next question
                                     Text(
                                         text = "Please wait a moment while we collect your smartwatch data...",
                                         color = Color.Gray,
@@ -433,7 +490,7 @@ fun AnswerAssessmentContent(
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .height(175.dp)
-                                            .padding(start = 16.dp, end = 16.dp)// Set the height of the BasicTextField to make it bigger
+                                            .padding(start = 16.dp, end = 16.dp)
                                     )
 
                                     if (isDataCollected) {
@@ -444,7 +501,6 @@ fun AnswerAssessmentContent(
 
                                         Spacer(modifier = Modifier.height(16.dp))
 
-                                        // This will show the spinning loading icon
                                         CircularProgressIndicator(modifier = Modifier.size(24.dp))
 
                                         Spacer(modifier = Modifier.height(120.dp))
@@ -454,13 +510,13 @@ fun AnswerAssessmentContent(
                                             fontWeight = FontWeight.Bold,
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .height(175.dp) // Set the height of the BasicTextField to make it bigger
+                                                .height(175.dp)
                                         )
 
 
-                                        // Simulate a delay of 1 or 2 seconds (adjust as needed)
+                                        // Simulate a delay of 1 or 2 seconds
                                         LaunchedEffect(Unit) {
-                                            delay(1000) // or delay(2000) for 2 seconds
+                                            delay(1000)
                                             if (isLastQuestion) {
                                                 submitAllAnswers(
                                                     sharedViewModel,
@@ -485,13 +541,10 @@ fun AnswerAssessmentContent(
                 }
             }
         }
-            if (currentQuestion.type != QuestionEnum.smartwatch_data)
+            if (currentQuestion.type != QuestionEnum.wearable)
             {
                 Button(
                     onClick = {
-                        // Log a message when the button is clicked
-                        Log.i("MyTag", "Button clicked")
-
                         // Check if the current question is answered before moving to the next question
                         val answer = answerMap[currentQuestionIndex]
                         isAnswered = when (answer) {
@@ -503,18 +556,15 @@ fun AnswerAssessmentContent(
                             Log.i("IsAnswered", isAnswered.toString())
                             if (isLastQuestion) {
                                 submitAllAnswers(sharedViewModel, viewModel, answerMap, questions)
-                                Log.i("Last question", "Last question and submit")
                             } else {
                                 val answers = StringBuilder()
                                 answerMap.forEach { (questionIndex, answerList) ->
                                     answers.append("Question $questionIndex: $answerList\n")
                                 }
-                                Log.d("TAG", "All questions answered:\n$answers")
-                                // Move to the next question
                                 currentQuestionIndex++
                             }
                         } else {
-                            Log.i("IsAnswered", "Not answered")
+                            // Show an error message if the current question is not answered
                         }
                     },
                     modifier = Modifier
@@ -539,9 +589,6 @@ fun AnswerAssessmentContent(
 
     }
 
-    // Submit all answers to the server
-
-    // Automatically submit the answer when the focus is lost from the text field
     val softwareKeyboardController = LocalSoftwareKeyboardController.current
     DisposableEffect(currentQuestionIndex) {
         softwareKeyboardController?.hide()
@@ -552,17 +599,14 @@ fun AnswerAssessmentContent(
 fun submitAllAnswers(sharedViewModel: SharedViewModel, viewModel: AnswerAssessmentViewModel, answerMap: Map<Int, AnswerData>, questions: List<AssessmentSchema>) {
     val userId = AuthManager.getUserId()
     val assessmentId = sharedViewModel.getAssessment()?.id ?: ""
-    val assessmentTitle = sharedViewModel.getAssessment()?.title ?: ""
-    val assessmentType =
-        sharedViewModel.getAssessment()?.assessmentType?.name ?: "" // Assuming it's an enum
+
+
     val timestamp = ZonedDateTime.now()
     val answersToSave: Map<Int, AnswerData> = answerMap.mapValues { it.value }
     val frequency = sharedViewModel.getAssessment()?.frequency ?: ""
     viewModel.saveAnswersToDatabase(
         userId,
         assessmentId,
-        assessmentTitle,
-        assessmentType,
         timestamp,
         frequency,
         answersToSave,

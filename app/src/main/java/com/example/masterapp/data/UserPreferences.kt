@@ -24,7 +24,7 @@ class UserPreferences(context: Context) {
             putString(PREF_FULL_NAME, fullName)
             putString(PREF_FIRST_NAME, firstName)
             putString(PREF_EMAIL, email)
-            apply() // Use apply() instead of commit()
+            apply()
         }
     }
 

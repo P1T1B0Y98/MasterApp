@@ -7,16 +7,12 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
-import androidx.navigation.NavController
-import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.NavDeepLinkRequest
 import androidx.navigation.NavHostController
-import androidx.navigation.NavOptions
 import com.example.masterapp.presentation.navigation.Screen
 
 class MainActivity : ComponentActivity() {
-    private lateinit var navController: NavHostController // Declare navController as a property
+    private lateinit var navController: NavHostController 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,10 +26,9 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     fun MainContent() {
-        navController = rememberNavController() // Initialize navController here
+        navController = rememberNavController()
 
         MasterApp(
-            navController = navController, // Pass NavController to MasterApp
             healthConnectManager = (application as BaseApplication).healthConnectManager,
             authManager = AuthManager,
             notificationSettingsManager = (application as BaseApplication).notificationSettingsManager
@@ -46,8 +41,6 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handleDeepLink(intent: Intent?) {
-        // If NavController's built-in deep link handling isn't enough, use this method
-        // For example, if you need to process data from the deep link before navigating
 
         val deepLinkUri = intent?.data
         if (deepLinkUri != null) {

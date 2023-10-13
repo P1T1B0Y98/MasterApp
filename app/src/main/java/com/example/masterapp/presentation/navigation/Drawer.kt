@@ -2,8 +2,6 @@ package com.example.masterapp.presentation.navigation
 
 import AuthManager
 import android.util.Log
-import android.widget.Space
-import com.example.masterapp.presentation.theme.MasterAppTheme
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -20,10 +18,8 @@ import androidx.compose.material.Button
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.ScaffoldState
 import androidx.compose.material.Text
-import androidx.compose.material.rememberScaffoldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -31,12 +27,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
 import com.example.masterapp.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -55,13 +49,13 @@ fun Drawer(
     val isLoggedIn = authManager.isSignedIn()
     Log.i("Drawer", "isLoggedIn: $isLoggedIn")
     // Render the Drawer and the button's Image if the user is logged in
-    if (isLoggedIn) {
+    if (isLoggedIn && currentRoute != Screen.SetupScreen.route) {
         Column {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(MaterialTheme.colors.primary)
-                    .padding(8.dp) // You can adjust the padding as needed
+                    .padding(8.dp)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -108,7 +102,6 @@ fun Drawer(
                     onItemClick = {
                         Log.i("Drawer", "item.route: ${item.route}")
                         navController.navigate(item.route) {
-                            // See: https://developer.android.com/jetpack/compose/navigation#nav-to-composable
                             navController.graph.startDestinationRoute?.let { route ->
                                 popUpTo(route) {
                                     saveState = true
@@ -133,7 +126,6 @@ fun Drawer(
                 onClick = {
                     authManager.logout()
                     navController.navigate(Screen.LoginScreen.route) {
-                        // Clear the back stack including the start destination
                         popUpTo(navController.graph.startDestinationRoute!!) {
                             inclusive = true
                             saveState = true
@@ -153,16 +145,15 @@ fun Drawer(
                     horizontalArrangement = Arrangement.Center
                 ) {
                     Image(
-                        painter = painterResource(id = R.drawable.baseline_logout_24), // Assuming "ic_logout" is your logout icon resource
+                        painter = painterResource(id = R.drawable.baseline_logout_24),
                         contentDescription = "Logout Icon",
-                        modifier = Modifier.size(24.dp) // Adjust the icon size if necessary
+                        modifier = Modifier.size(24.dp)
                     )
-                    Spacer(modifier = Modifier.width(8.dp)) // Some space between icon and text
+                    Spacer(modifier = Modifier.width(8.dp)) 
                     Text("Logout")
                 }
             }
-
-            // Provide some space after the button
+            
             Spacer(modifier = Modifier.height(16.dp))
         }
     }

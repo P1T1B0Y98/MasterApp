@@ -8,8 +8,6 @@ import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Assessment
-import androidx.compose.material.icons.rounded.Bedtime
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -43,7 +41,7 @@ fun GeneralInformationCard(
 
                 Spacer (modifier = Modifier.height(8.dp))
                 LabeledValue("Questionnaire: ", answer.questionnaire.title)
-                LabeledValue("Completed: ", answer.completed)
+                LabeledValue("Completed: ", answer.authored)
                 LabeledValue("Type: ", answer.questionnaire.questionnaireType.toString())
             }
 

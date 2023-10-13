@@ -1,9 +1,7 @@
 package com.example.masterapp.data
 
-import com.example.masterapp.type.JSON
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 
 @Serializable
@@ -21,44 +19,26 @@ sealed class AnswerData {
     @SerialName("Stress")
     data class Stress(
         val value: StressData,
-        val valueType: String?
     ) : AnswerData()
 
     @Serializable
     @SerialName("Sleep")
     data class Sleep(
         val value: List<SleepSessionData>,
-        val valueType: String?
     ) : AnswerData()
 
     @Serializable
     @SerialName("Exercise")
     data class Exercise(
         val value: List<ExerciseSession>,
-        val valueType: String?
         ) : AnswerData()
 
+    @Serializable
+    @SerialName("FhirObservation")
+    data class FHIROBSERVATION(
+        val value: FhirObservation
+    ) : AnswerData()
 }
-
-@Serializable
-data class AnswerInput(
-    val linkId: String,
-    val questionType: String,
-    val question: String,
-    val answer: AnswerData
-)
-
-
-@Serializable
-data class Metadatas(
-    val submissionDate: String,
-    val device: String
-)
-
-@Serializable
-data class Item(
-    val questions: FHIRQuestionnaireResponseAnswer,
-)
 
 @Serializable
 data class FHIRQuestionnaireResponse(

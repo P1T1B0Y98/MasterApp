@@ -4,12 +4,12 @@ query QUESTIONNAIRES_RESPONSE_BY_USER($userID: ID!, $limit: Int, $offset: Int) {
         rows {
             id
             item
+            authored
             questionnaire {
                 id
                 title
                 type
             }
-            createdAt
         }
     }
 }

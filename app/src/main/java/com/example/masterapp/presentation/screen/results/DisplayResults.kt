@@ -12,7 +12,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.StackedBarChart
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -25,7 +24,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
 
 @Composable
@@ -42,12 +40,21 @@ fun ResultsList(
                 modifier = Modifier
                     .fillMaxWidth()
                     .align(Alignment.CenterHorizontally)
-                    .padding(bottom = 15.dp),
+                    .padding(bottom = 15.dp)
+                    .clip(
+                        RoundedCornerShape(
+                            topStart = 0.dp,
+                            topEnd = 0.dp,
+                            bottomStart = 50.dp, // Adjust this value for the desired corner radius
+                            bottomEnd = 50.dp // Adjust this value for the desired corner radius
+                        )
+                    )
+                    .background(MaterialTheme.colors.primary),
             ) {
                 Text(
-                    text = "Your answers",
+                    text = "Answers",
                     style = MaterialTheme.typography.h4,
-                    color = MaterialTheme.colors.primary,
+                    color = Color.White,
                     textAlign = TextAlign.Center,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier
@@ -58,9 +65,11 @@ fun ResultsList(
                 Text(
                     text = "Here you can find your answered questionnaires. Click on one to see detailed results.",
                     style = MaterialTheme.typography.body1,
-                    color = MaterialTheme.colors.primary,
+                    color = Color.White,
                     textAlign = TextAlign.Center,
                 )
+
+                Spacer(modifier = Modifier.height(35.dp))
 
             }
 
@@ -129,7 +138,7 @@ fun ResultCard(
                             modifier = Modifier.fillMaxWidth()
                         )
                         Text(
-                            text = "Completed: ${answer.completed}",
+                            text = "Completed: ${answer.authored}",
                             style = MaterialTheme.typography.body2,
                             color = Color.White,
                             textAlign = TextAlign.Left,
@@ -163,23 +172,20 @@ fun ResultCard(
                     }
                 }
 
-                // Bar chart icon (non-clickable)
                 Icon(
                     imageVector = Icons.Filled.StackedBarChart,
                     contentDescription = "Graph Icon",
                     tint = Color.White,
-                    modifier = Modifier.size(50.dp) // Adjust padding as needed
+                    modifier = Modifier.size(50.dp)
                 )
             }
 
-            // Delete icon in top right corner
             IconButton(
                 onClick = {
-                    // Show the delete confirmation dialog
                     showDialog = true
                 },
                 modifier = Modifier
-                    .align(Alignment.TopEnd) // Align to top right
+                    .align(Alignment.TopEnd)
                     .padding(4.dp)
                     .size(15.dp)
             ) {
@@ -192,11 +198,10 @@ fun ResultCard(
         }
     }
 
-    // Delete confirmation dialog
     if (showDialog) {
         AlertDialog(
             onDismissRequest = {
-                // Dismiss the dialog if canceled
+
                 showDialog = false
             },
             title = { Text(text = "Delete Confirmation") },

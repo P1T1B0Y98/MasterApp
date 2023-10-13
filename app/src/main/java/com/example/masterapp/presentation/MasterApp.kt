@@ -37,8 +37,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.health.connect.client.HealthConnectClient.Companion.SDK_AVAILABLE
-import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.masterapp.NotificationSettingsManager
@@ -54,7 +52,6 @@ import kotlinx.coroutines.launch
 @SuppressLint("UnusedMaterialScaffoldPaddingParameter")
 @Composable
 fun MasterApp(
-    navController: NavController,
     healthConnectManager: HealthConnectManager,
     authManager: AuthManager,
     notificationSettingsManager: NotificationSettingsManager
@@ -66,8 +63,6 @@ fun MasterApp(
         val scope = rememberCoroutineScope()
         val navBackStackEntry by navController.currentBackStackEntryAsState()
         val currentRoute = navBackStackEntry?.destination?.route
-
-        val availability by healthConnectManager.availability
 
         // Get the user's login status from authManager
         val userLoggedIn = authManager.isSignedIn()
@@ -91,7 +86,7 @@ fun MasterApp(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             // Place the icon here but make it invisible when not needed. This is to ensure equal space is always reserved on both sides.
-                            if (userLoggedIn && availability == SDK_AVAILABLE) {
+                            if (userLoggedIn && currentRoute != Screen.SetupScreen.route) {
                                 IconButton(
                                     onClick = {
                                         scope.launch {
@@ -123,7 +118,7 @@ fun MasterApp(
                 )
             },
             drawerContent = {
-                if (availability == SDK_AVAILABLE) {
+                if (userLoggedIn && currentRoute != Screen.SetupScreen.route) {
                     Drawer(
                         scope = scope,
                         scaffoldState = scaffoldState,
@@ -136,7 +131,7 @@ fun MasterApp(
                 SnackbarHost(it) { data -> Snackbar(snackbarData = data) }
             },
             bottomBar = {
-                if (userLoggedIn && availability == SDK_AVAILABLE) {
+                if (userLoggedIn && currentRoute != Screen.SetupScreen.route) {
                     // Add the BottomNavigation component here
                     BottomNavigation(
                         modifier = Modifier.fillMaxWidth(),
@@ -204,9 +199,8 @@ fun MasterApp(
             }
         ) {
             AppNavigator(
-                healthConnectManager = healthConnectManager,
                 navController = navController,
-                scaffoldState = scaffoldState,
+                healthConnectManager = healthConnectManager,
                 authManager = authManager,
                 notificationSettingsManager = notificationSettingsManager
             )

@@ -10,6 +10,7 @@ import kotlinx.parcelize.Parcelize
 data class Assessment(
     val id: String,
     val title: String,
+    val description: String,
     val assessmentType: QuestionnaireTypeEnum?,
     val frequency: String?,
     val assessmentSchema: List<AssessmentSchema>?,

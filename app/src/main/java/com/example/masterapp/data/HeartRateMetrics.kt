@@ -1,6 +1,5 @@
 package com.example.masterapp.data
 
-import com.google.gson.Gson
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -13,7 +12,3 @@ data class HeartRateMetrics(
     val measurementCount: Long,
     val sourceAppInfo: MasterAppInfo?
 )
-
-fun convertHeartRateMetricsToJson(metrics: HeartRateMetrics): String {
-    return Gson().toJson(metrics)
-}

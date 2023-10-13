@@ -2,17 +2,14 @@ package com.example.masterapp.presentation.screen.assessments
 
 import android.os.RemoteException
 import android.util.Log
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.apollographql.apollo3.ApolloClient
 import com.apollographql.apollo3.api.Optional
 import com.apollographql.apollo3.exception.ApolloException
-import com.example.masterapp.ASSESSMENTS_FINDQuery
 import com.example.masterapp.GET_QUESTIONNAIRES_LISTQuery
 import com.example.masterapp.data.Assessment
 import com.example.masterapp.data.AssessmentSchema
@@ -20,7 +17,6 @@ import com.example.masterapp.data.FHIRQuestionnaireResponse
 import com.example.masterapp.data.HealthConnectManager
 import com.example.masterapp.data.Option
 import com.example.masterapp.data.roomDatabase.QuestionnaireRepository
-import com.example.masterapp.presentation.screen.setup.SetupScreenViewModel
 import com.example.masterapp.type.QuestionnairesFilterInput
 import com.example.masterapp.type.QuestionnairesOrderByEnum
 import kotlinx.coroutines.launch
@@ -43,7 +39,6 @@ class AssessmentViewModel(
 
     var assessmentPair: Pair<List<Assessment>, List<Assessment>>? by mutableStateOf(null)
 
-
     init {
         viewModelScope.launch {
             if (hasAllPermissions()) {
@@ -61,7 +56,6 @@ class AssessmentViewModel(
             }
         }
     }
-
 
     fun initialLoad() {
         viewModelScope.launch {
@@ -93,10 +87,8 @@ class AssessmentViewModel(
 
         for (assessment in assessments) {
             if (isQuestionnaireCompleted(userId, assessment.id)) {
-                Log.i("AssessmentsList", "Assessment ${assessment.id} is completed")
                 completedAssessments.add(assessment)
             } else {
-                Log.i("AssessmentsList", "Assessment ${assessment.id} is ready")
                 readyAssessments.add(assessment)
             }
         }
@@ -127,6 +119,7 @@ class AssessmentViewModel(
                         id = it.id,
                         title = it.title,
                         assessmentType = it.type,
+                        description = it.description,
                         frequency = it.repeats,
                         assessmentSchema = it.item?.map { schema ->
                             AssessmentSchema(
@@ -184,21 +177,13 @@ class AssessmentViewModel(
         // Fetch record for the given userId and questionnaireId
         FHIRQuestionnaireResponse
         val reminder = questionnaireRepository.getQuestionnaire(userId, questionnaireID)
-        reminder?.let {
-            // If completedTimestamp is null, the questionnaire hasn't been completed yet
-            Log.i("QuestionnaireReminder", reminder.toString())
+
+        reminder.let {
             if (reminder == null) {
-                Log.i("QuestionnaireReminder", "Reminder is null")
                 return false
             }
-
-            // If current time is greater than or equal to the notificationTimestamp, then the user can take the questionnaire again
-            Log.i("QuestionnaireReminder", "Current time: ${System.currentTimeMillis()}")
-            Log.i("QuestionnaireReminder", "Notification time: ${reminder.notificationTimestamp}")
             return System.currentTimeMillis() < reminder.notificationTimestamp
         }
-        return false
-
     }
 }
 

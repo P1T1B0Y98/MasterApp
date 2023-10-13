@@ -1,5 +1,6 @@
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Log
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import kotlinx.coroutines.Dispatchers
@@ -32,12 +33,8 @@ object AuthManager {
                 EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
             )
         } catch (e: Exception) {
-            // Handle the exception here (e.g., log or show an error message)
+           Log.i("AuthManager", "Error initializing encrypted shared preferences: ${e.message}")
         }
-    }
-
-    suspend fun getUser(): String? = withContext(Dispatchers.IO) {
-        sharedPreferences.getString(KEY_USER, null)
     }
 
     fun getToken(): String? {
@@ -50,9 +47,6 @@ object AuthManager {
             .putString(KEY_TOKEN, token)
             .apply()
     }
-
-    // Add additional methods for authentication, logout, etc.
-    // ...
 
     fun logout() {
         sharedPreferences.edit().clear().apply()
@@ -97,7 +91,4 @@ object AuthManager {
     fun getUserId(): String {
         return getUserProfile()?.id ?: ""
     }
-
-    // Add additional methods for interacting with the user profile
-    // ...
 }

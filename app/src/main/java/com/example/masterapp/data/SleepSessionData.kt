@@ -1,8 +1,6 @@
 package com.example.masterapp.data
 
 import androidx.health.connect.client.records.SleepSessionRecord
-import androidx.health.connect.client.records.SleepStageRecord
-import com.google.gson.Gson
 import kotlinx.serialization.Serializable
 import java.time.Duration
 import java.time.Instant
@@ -22,7 +20,3 @@ data class SleepSessionData(
     val stages: List<SleepStageData> = listOf(),
     val heartRateMetrics: HeartRateMetrics
 )
-
-fun convertSleepSessionDataToJson(sleepSessionData: SleepSessionData): String {
-    return Gson().toJson(sleepSessionData)
-}

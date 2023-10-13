@@ -1,13 +1,11 @@
 package com.example.masterapp.presentation.screen.results
 
-import android.util.Log
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.compose.rememberNavController
 import com.example.masterapp.presentation.screen.LoadingScreen
 
 @Composable
@@ -26,7 +24,6 @@ fun ResultsScreen(
         }
         is ResultsViewModel.ResultsUiState.Success -> {
             // Display the assessment questions
-            Log.i("ResultsScreen", "Displaying results")
             val answers = (viewModel.uiState.value
                     as ResultsViewModel.ResultsUiState.Success).answers
             ResultsList(answers, viewModel = viewModel) { selectedAnswer ->
@@ -41,8 +38,6 @@ fun ResultsScreen(
             // Display a success message if the assessment answers were submitted successfully
             val answer = (viewModel.uiState.value
                     as ResultsViewModel.ResultsUiState.Detailed).answer
-            val navController = rememberNavController()
-            Log.i("ResultsScreen", answer.toString())
             DetailedResult(answer = answer) {
                 viewModel.goBack()
             }

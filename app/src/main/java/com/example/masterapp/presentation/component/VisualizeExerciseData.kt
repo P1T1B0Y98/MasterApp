@@ -56,7 +56,7 @@ fun VisualizeExerciseData(exerciseData: List<ExerciseSession>) {
     val showSnackbar = remember { mutableStateOf(false) }
     val selectedSessionIndexState = remember { mutableStateOf(0) }
     val selectedSession = remember { mutableStateOf(exerciseData.getOrNull(selectedSessionIndexState.value)) }
-    val isContentVisible = remember { mutableStateOf(true) } // Determines if content is expanded or shrunk
+    val isContentVisible = remember { mutableStateOf(true) }
 
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -108,7 +108,6 @@ fun VisualizeExerciseData(exerciseData: List<ExerciseSession>) {
                         )
                     }
 
-                    // Use animatedVisibility for the collapsible content
                     AnimatedVisibility(visible = isContentVisible.value) {
                         Column {
                             Spacer(modifier = Modifier.height(8.dp))
@@ -121,13 +120,11 @@ fun VisualizeExerciseData(exerciseData: List<ExerciseSession>) {
 
                             Spacer(modifier = Modifier.height(16.dp))
 
-                            // If there's a selected session, display its details
                             ExerciseSessionCard(selectedSession.value, exerciseData.size)
                         }
                     }
                 }
 
-                // Info Icon placed on the top right of the Box
                 Icon(
                     imageVector = Icons.Default.Info,
                     contentDescription = "Information",
@@ -141,7 +138,6 @@ fun VisualizeExerciseData(exerciseData: List<ExerciseSession>) {
                         }
                 )
 
-                // Display Snackbar on top of other content in the Box
                 if (showSnackbar.value) {
                     InfoSnackbar {
                         showSnackbar.value = false
@@ -154,7 +150,6 @@ fun VisualizeExerciseData(exerciseData: List<ExerciseSession>) {
 
 @Composable
 fun ExerciseSessionCard(exerciseSession: ExerciseSession?, size: Int) {
-    // You can fill in the details for the session here, for simplicity I'm just showing the UID
     val sessionData = exerciseSession?.sessionData
     if (sessionData != null) {
         Card(
@@ -220,7 +215,7 @@ fun ExerciseSessionCard(exerciseSession: ExerciseSession?, size: Int) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween, // Distributes space around the children
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     // Card for bpmMax
@@ -233,7 +228,7 @@ fun ExerciseSessionCard(exerciseSession: ExerciseSession?, size: Int) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween, // Distributes space around the children
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     // Card for bpmMax
@@ -250,12 +245,10 @@ fun ExerciseSessionCard(exerciseSession: ExerciseSession?, size: Int) {
                         .padding(vertical = 8.dp),
                     horizontalArrangement = Arrangement.Start
                 ) {
-                    // Card for bpmMax
                     BPMCard("Max BPM", sessionData.maxHeartRate.toString())
                     BPMCard("Min BPM", sessionData.minHeartRate.toString())
                     BPMCard("Avg BPM", sessionData.avgHeartRate.toString())
                 }
-                // Add more session details here...
             }
         }
     }
@@ -317,14 +310,13 @@ fun DaysSelector(sessions: List<LocalDate>, onDayClick: (LocalDate) -> Unit) {
     val shouldScrollLeft = remember { mutableStateOf(false) }
     val shouldScrollRight = remember { mutableStateOf(false) }
 
-    // Generate the range of dates
     val dateRange = generateSequence(firstSessionDate) { date ->
         date.plusDays(1).takeIf { it <= lastSessionDate }
     }.toList()
 
     Box(
-        modifier = Modifier.fillMaxWidth(), // This will make the Box take the full width available
-        contentAlignment = Alignment.Center // This will center its content
+        modifier = Modifier.fillMaxWidth(), 
+        contentAlignment = Alignment.Center
     ) {
         Text(
             text = "Select a day",

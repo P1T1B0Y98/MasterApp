@@ -15,17 +15,13 @@ import com.apollographql.apollo3.exception.ApolloException
 import com.example.masterapp.QUESTIONNAIRES_RESPONSE_BY_USERQuery
 import com.example.masterapp.QUESTIONNAIRES_RESPONSE_DELETEMutation
 import com.example.masterapp.data.EncryptionHelper.decrypt
-import com.example.masterapp.data.FHIRQuestionnaireResponseAnswer
 import com.example.masterapp.data.FHIRQuestionnaireResponseItem
-import com.example.masterapp.data.Item
-import com.example.masterapp.data.roomDatabase.AnswerViewModel
 import com.example.masterapp.data.roomDatabase.QuestionnaireReminderViewModel
-import com.example.masterapp.presentation.screen.SharedViewModel
 import kotlinx.coroutines.launch
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
-import java.text.SimpleDateFormat
-import java.util.Locale
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 
 class ResultsViewModel(
     private val questionnaireReminderViewModel: QuestionnaireReminderViewModel,
@@ -52,25 +48,6 @@ class ResultsViewModel(
 
     }
 
-    /*private fun loadAssessments() {
-        _uiState.value = ResultsUiState.Loading
-        viewModelScope.launch {
-            try {
-                answerViewModel.getAllAnswersByUser(AuthManager.getUserId())
-                answerViewModel.answersByUser.observeForever { answers ->
-                    if (answers != null) {
-                        Log.i("ResultsViewModel", "Answers: $answers")
-                        _uiState.value = ResultsUiState.Success(answers)
-                    } else {
-                        _uiState.value = ResultsUiState.Error
-                    }
-                }
-            } catch (e: Exception) {
-                _uiState.value = ResultsUiState.Error
-            }
-        }
-    }*/
-
     fun onAnswerSelected(answer: AssessmentResponses) {
         Log.i("ResultsViewModel", "Setting detailed state for answer: ${answer.questionnaire.title}")
         _uiState.value = ResultsUiState.Detailed(answer)
@@ -89,7 +66,7 @@ class ResultsViewModel(
             val response = apolloClient.query(query).execute()
             Log.i("response", response.toString())
             val assessmentResponses = response.data?.questionnaireResponseListByUserID?.rows ?: emptyList()
-
+            Log.i("asssessments", assessmentResponses.toString())
             val decryptedAssessmentResponses = assessmentResponses.map { response ->
                 val formData = response.item as? String
                 if (formData != null) {
@@ -100,18 +77,18 @@ class ResultsViewModel(
                     val json = Json { ignoreUnknownKeys = true}
                     val item = json.decodeFromString<List<FHIRQuestionnaireResponseItem>>(decryptedFormData)
                     Log.i("AssessmentsList", "Form data: $formData")
-                    val completed = response.createdAt.toString()
-
-                    Log.i("AssessmentsList", "Created at: ${response.createdAt}")
+                    val formattedTime = ZonedDateTime.parse(response.authored)
+                    val format = DateTimeFormatter.ofPattern("dd.MM.yy HH:mm")
+                    val formattedDate = formattedTime.format(format)
                     AssessmentResponses(
                         id = response.id,
                         questionnaire = QuestionnaireInfo(
-                            id = response.questionnaire?.id ?: "",
-                            title = response.questionnaire?.title ?: "",
-                            questionnaireType = response.questionnaire?.type
+                            id = response.questionnaire.id,
+                            title = response.questionnaire.title,
+                            questionnaireType = response.questionnaire.type
                         ),
                         item = item,
-                        completed = formatIso8601ToCustom((completed))
+                        authored = formattedDate
                     )
                 } else {
                     return null // In case formData is not a String, keep the original response
@@ -125,17 +102,16 @@ class ResultsViewModel(
             Log.w("AssessmentsList", "Failed to get response list", e)
             return null
         }
-        return null
     }
 
-    suspend fun deleteQuestionnaireResponse(id: String): Boolean? {
+    suspend fun deleteQuestionnaireResponse(id: String): Boolean {
         Log.i("id", id)
         try {
             val mutation = QUESTIONNAIRES_RESPONSE_DELETEMutation(
                 id = id
             )
 
-            val response = apolloClient.mutate(mutation).execute()
+            val response = apolloClient.mutation(mutation).execute()
 
             Log.i(response.toString(), "response")
 
@@ -152,17 +128,4 @@ class ResultsViewModel(
         _uiState.value = ResultsUiState.Success(assessmentResponses ?: emptyList())
     }
 
-    // Implement other logic and functions as needed
-    fun formatIso8601ToCustom(dateTimeString: String): String {
-        val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
-        val outputFormat = SimpleDateFormat("dd.MM.yy HH:mm", Locale.getDefault())
-
-        try {
-            val date = inputFormat.parse(dateTimeString)
-            return outputFormat.format(date)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            return ""
-        }
-    }
 }

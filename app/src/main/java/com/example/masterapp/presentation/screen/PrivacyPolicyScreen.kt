@@ -1,6 +1,7 @@
 package com.example.masterapp.presentation.screen
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -13,15 +14,13 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.masterapp.R
-import com.example.masterapp.presentation.theme.MasterAppTheme
 
 /**
  * Shows the privacy policy.
@@ -30,20 +29,12 @@ import com.example.masterapp.presentation.theme.MasterAppTheme
 fun PrivacyPolicyScreen() {
     val sections = listOf(
         createPrivacyPolicySection(
-            title = "Data Collection",
-            content = "We collect user data for the purpose of improving our services..."
+            title = "Introduction",
+            content = "Privacy policy for the MindSync application..."
         ),
         createPrivacyPolicySection(
-            title = "Data Sharing",
-            content = "We may share user data with trusted third-party partners for analytics..."
-        ),
-        createPrivacyPolicySection(
-            title = "Data Collection",
-            content = "We collect user data for the purpose of improving our services..."
-        ),
-        createPrivacyPolicySection(
-            title = "Data Sharing",
-            content = "We may share user data with trusted third-party partners for analytics..."
+            title = "Information Collected",
+            content = "Name, email, wearable data..."
         ),
         createPrivacyPolicySection(
             title = "Data Collection",
@@ -54,50 +45,80 @@ fun PrivacyPolicyScreen() {
             content = "We may share user data with trusted third-party partners for analytics..."
         ),
         createPrivacyPolicySection(
-            title = "Data Collection",
-            content = "We collect user data for the purpose of improving our services..."
+            title = "Data Usage",
+            content = "To be decided..."
         ),
         createPrivacyPolicySection(
-            title = "Data Sharing",
-            content = "We may share user data with trusted third-party partners for analytics..."
+            title = "User Control",
+            content = "To be decided..."
         ),
         // Add more PrivacyPolicySection for other sections of your privacy policy
     )
-
-    LazyColumn(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .background(Color.White),
     ) {
-        item {
-            Image(
+        Column(
+            horizontalAlignment = Alignment.Start,
+            verticalArrangement = Arrangement.Top,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(250.dp)
+                .clip(
+                    RoundedCornerShape(
+                        topStart = 0.dp,
+                        topEnd = 0.dp,
+                        bottomStart = 50.dp, // Adjust this value for the desired corner radius
+                        bottomEnd = 50.dp // Adjust this value for the desired corner radius
+                    )
+                )
+                .background(MaterialTheme.colors.primary),
+        ) {
+            Spacer(modifier = Modifier.height(30.dp))
+
+            Row(
+                horizontalArrangement = Arrangement.Center,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .size(200.dp)
-                    .padding(bottom = 0.dp),
-                painter = painterResource(id = R.mipmap.ic_launcher_foreground),
-                contentDescription = stringResource(id = R.string.health_connect_logo)
+                    .padding(horizontal = 16.dp)
             )
+            {
+                Image(
+                    painter = painterResource(id = R.mipmap.ic_launcher_foreground_dup),
+                    contentDescription = null,
+                    modifier = Modifier.size(125.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(20.dp))
 
-            Text (
-                text = "Mind Sync - Privacy Policy",
-                fontSize = 24.sp,
+            Text(
+                text = "MindSync",
+                style = MaterialTheme.typography.h4,
+                color = Color.White,
+                textAlign = TextAlign.Center,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colors.primary,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
             )
-
-            Spacer(modifier = Modifier.height(16.dp))
         }
 
-        items(sections) { section ->
-            PrivacyPolicySectionCard(section = section)
-            Spacer(modifier = Modifier.height(16.dp))
-        }
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxWidth().padding(top = 250.dp)
+                .padding(16.dp)
+        ) {
 
-        item {
-            Spacer(modifier = Modifier.height(40.dp))
-        }
+            items(sections) { section ->
+                PrivacyPolicySectionCard(section = section)
+                Spacer(modifier = Modifier.height(16.dp))
+            }
 
+            item {
+                Spacer(modifier = Modifier.height(40.dp))
+            }
+        }
     }
 }
 

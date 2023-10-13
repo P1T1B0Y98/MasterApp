@@ -48,7 +48,7 @@ class NotificationWorker(appContext: Context, workerParams: WorkerParameters)
         try {
             notificationManager.notify(200, builder.build())
         } catch (e: SecurityException) {
-            Log.i("Hello", "SecurityException: ${e.message}")
+            Log.i("Exception", "SecurityException: ${e.message}")
         }
     }
 

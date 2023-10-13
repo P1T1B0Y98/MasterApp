@@ -13,6 +13,7 @@ query GET_QUESTIONNAIRES_LIST(
         rows {
             id
             title
+            description
             type
             repeats
             item {

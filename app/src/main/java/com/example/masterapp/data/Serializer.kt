@@ -9,6 +9,7 @@ import android.util.Base64
 import androidx.health.connect.client.units.Energy
 import androidx.health.connect.client.units.Length
 import androidx.health.connect.client.units.Velocity
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializer
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -23,6 +24,7 @@ import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
+@OptIn(ExperimentalSerializationApi::class)
 @Serializer(forClass = ZonedDateTime::class)
 object ZonedDateTimeSerializer : KSerializer<ZonedDateTime> {
     private val formatter = DateTimeFormatter.ISO_ZONED_DATE_TIME
@@ -36,8 +38,6 @@ object ZonedDateTimeSerializer : KSerializer<ZonedDateTime> {
     }
 }
 
-// Note: You'd adjust the serialization for each based on your needs,
-// but here's a generic example for Length:
 object LengthSerializer : KSerializer<Length> {
     override val descriptor: SerialDescriptor =
         PrimitiveSerialDescriptor("Length", PrimitiveKind.DOUBLE)
@@ -51,8 +51,6 @@ object LengthSerializer : KSerializer<Length> {
     }
 }
 
-
-
 object EnergySerializer : KSerializer<Energy> {
 
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("Energy", PrimitiveKind.DOUBLE)
@@ -65,7 +63,6 @@ object EnergySerializer : KSerializer<Energy> {
         return Energy.kilocalories(decoder.decodeDouble()) // Deserializing assuming joules was the chosen unit for serialization
     }
 }
-
 
 object CustomVelocitySerializer : KSerializer<Velocity> {
     override val descriptor = PrimitiveSerialDescriptor("Velocity", PrimitiveKind.DOUBLE)
@@ -87,6 +84,7 @@ fun Decoder.decodeVelocity(): Velocity {
     return Velocity.metersPerSecond(decodeDouble())
 }
 
+@OptIn(ExperimentalSerializationApi::class)
 @Serializer(forClass = Instant::class)
 object InstantSerializer : KSerializer<Instant> {
     override val descriptor = PrimitiveSerialDescriptor("Instant", PrimitiveKind.STRING)
@@ -100,6 +98,7 @@ object InstantSerializer : KSerializer<Instant> {
     }
 }
 
+@OptIn(ExperimentalSerializationApi::class)
 @Serializer(forClass = ZoneOffset::class)
 object ZoneOffsetSerializer : KSerializer<ZoneOffset> {
     override val descriptor = PrimitiveSerialDescriptor("ZoneOffset", PrimitiveKind.STRING)
@@ -113,6 +112,7 @@ object ZoneOffsetSerializer : KSerializer<ZoneOffset> {
     }
 }
 
+@OptIn(ExperimentalSerializationApi::class)
 @Serializer(forClass = Duration::class)
 object DurationSerializer : KSerializer<Duration> {
     override val descriptor = PrimitiveSerialDescriptor("Duration", PrimitiveKind.STRING)
@@ -126,6 +126,7 @@ object DurationSerializer : KSerializer<Duration> {
     }
 }
 
+@OptIn(ExperimentalSerializationApi::class)
 @Serializer(forClass = Drawable::class)
 object DrawableSerializer : KSerializer<Drawable?> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("Drawable", PrimitiveKind.STRING)

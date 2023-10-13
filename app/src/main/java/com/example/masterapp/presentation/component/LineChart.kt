@@ -34,7 +34,7 @@ fun HRVLineChart(hrvData: List<HeartRateVariabilityData>) {
         Entry(index.toFloat(), entry.value.toFloat())
     }
 
-    val myColor = Color.Blue // Replace with your desired color code
+    val myColor = Color.Blue 
     val colorAsInt: Int = myColor.toArgb()
 
     val dataSet = LineDataSet(entries, "Daily HRV Averages")

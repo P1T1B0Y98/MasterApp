@@ -24,22 +24,14 @@ import androidx.health.connect.client.records.SleepStageRecord
 import androidx.health.connect.client.records.SpeedRecord
 import androidx.health.connect.client.records.StepsRecord
 import androidx.health.connect.client.records.TotalCaloriesBurnedRecord
-import androidx.health.connect.client.records.WeightRecord
 import androidx.health.connect.client.request.AggregateRequest
-
 import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
-import androidx.health.connect.client.units.Mass
-import androidx.health.connect.client.units.Velocity
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.time.Duration
 import java.time.Instant
-import java.time.ZonedDateTime
-import java.time.temporal.ChronoUnit
-import kotlinx.coroutines.flow.Flow
-import java.util.UUID
-import kotlin.random.Random
 
 // The minimum android level that can use Health Connect
 const val MIN_SUPPORTED_SDK = Build.VERSION_CODES.O_MR1
@@ -60,7 +52,6 @@ class HealthConnectManager(val context: Context) {
 
     val _isPermissionGranted = MutableStateFlow(false)
 
-    // This is the public Flow (immutable)
     val isPermissionGranted: Flow<Boolean> = _isPermissionGranted.asStateFlow()
 
     val healthConnectCompatibleApps by lazy {
@@ -167,7 +158,6 @@ class HealthConnectManager(val context: Context) {
 
 
     suspend fun readSleepRecords(startTime: Instant, endTime: Instant ): List<SleepSessionData> {
-        Log.i("Sleep Records", "Reading sleep records")
         val response =
             healthConnectClient.readRecords(ReadRecordsRequest(
                 recordType = SleepSessionRecord::class,
@@ -180,7 +170,6 @@ class HealthConnectManager(val context: Context) {
         val sleepSessionDataList = mutableListOf<SleepSessionData>()
 
         for (sleepRecord in response.records) {
-            Log.i("Sleep Record", sleepRecord.toString())
 
             val sleepStageRecords = healthConnectClient
                 .readRecords(
@@ -232,14 +221,8 @@ class HealthConnectManager(val context: Context) {
                     duration = Duration.between(stageRecord.startTime, stageRecord.endTime),
                     metadata = stageRecord.metadata.id
                 )
-                Log.i("Sleep Stage Data Record", stageData.toString())
             }
-
-
         }
-
-        Log.i("Sleep session data List" , sleepSessionDataList.toString())
-
         return sleepSessionDataList
     }
 
@@ -251,39 +234,14 @@ class HealthConnectManager(val context: Context) {
         )
         val response = healthConnectClient.readRecords(request)
 
-        return createSampleHeartRateVariabilityData(start, end)
-       /* return response.records.map { record ->
+        return response.records.map { record ->
             HeartRateVariabilityData(
                 heartRateVariability = record.heartRateVariabilityMillis,
                 id = record.metadata.id,
                 time = record.time,
             )
-        }*/
-    }
-
-    fun createSampleHeartRateVariabilityData(start: Instant, end: Instant): List<HeartRateVariabilityData> {
-        val testData = mutableListOf<HeartRateVariabilityData>()
-
-        // Generate a range of timestamps for testing
-        val step = Duration.ofMinutes(15) // Simulate data every 15 minutes
-
-        var currentTimestamp = start
-
-        while (currentTimestamp.isBefore(end)) {
-            // Simulate heart rate variability data
-            val testDataPoint = HeartRateVariabilityData(
-                heartRateVariability = (60 + (Math.random() * 40)), // Random HRV value between 60 and 100
-                id = UUID.randomUUID().toString(), // Generate a random UUID as ID
-                time = currentTimestamp, // Replace with your app info or leave it as is
-            )
-
-            testData.add(testDataPoint)
-            currentTimestamp = currentTimestamp.plus(step)
         }
-
-        return testData
     }
-
 
     suspend fun readHeartRateRecord(start: Instant, end: Instant): HeartRateMetrics {
         val request = ReadRecordsRequest(
@@ -303,6 +261,7 @@ class HealthConnectManager(val context: Context) {
         )
         val resp = healthConnectClient.aggregate(req)
 
+
         return HeartRateMetrics(
             startTime = start.toString(),
             endTime = end.toString(),
@@ -319,7 +278,6 @@ class HealthConnectManager(val context: Context) {
                 )
             }
         )
-
     }
 
     suspend fun readExerciseSessions(start: Instant, end: Instant): List<ExerciseSessionRecord> {
@@ -328,7 +286,7 @@ class HealthConnectManager(val context: Context) {
             timeRangeFilter = TimeRangeFilter.between(start, end)
         )
         val response = healthConnectClient.readRecords(request)
-        Log.i("Exercise Sessions", response.records.toString())
+
         return response.records
     }
 
@@ -397,52 +355,4 @@ class HealthConnectManager(val context: Context) {
         )
         return healthConnectClient.readRecords(request).records
     }
-
-    private fun buildHeartRateSeries(
-        sessionStartTime: ZonedDateTime,
-        sessionEndTime: ZonedDateTime
-    ): HeartRateRecord {
-        val samples = mutableListOf<HeartRateRecord.Sample>()
-        var time = sessionStartTime
-        while (time.isBefore(sessionEndTime)) {
-            samples.add(
-                HeartRateRecord.Sample(
-                    time = time.toInstant(),
-                    beatsPerMinute = (80 + Random.nextInt(80)).toLong()
-                )
-            )
-            time = time.plusSeconds(30)
-        }
-        return HeartRateRecord(
-            startTime = sessionStartTime.toInstant(),
-            startZoneOffset = sessionStartTime.offset,
-            endTime = sessionEndTime.toInstant(),
-            endZoneOffset = sessionEndTime.offset,
-            samples = samples
-        )
-    }
-
-    private fun buildSpeedSeries(
-        sessionStartTime: ZonedDateTime,
-        sessionEndTime: ZonedDateTime
-    ) = SpeedRecord(
-        startTime = sessionStartTime.toInstant(),
-        startZoneOffset = sessionStartTime.offset,
-        endTime = sessionEndTime.toInstant(),
-        endZoneOffset = sessionEndTime.offset,
-        samples = listOf(
-            SpeedRecord.Sample(
-                time = sessionStartTime.toInstant(),
-                speed = Velocity.metersPerSecond(2.5)
-            ),
-            SpeedRecord.Sample(
-                time = sessionStartTime.toInstant().plus(5, ChronoUnit.MINUTES),
-                speed = Velocity.metersPerSecond(2.7)
-            ),
-            SpeedRecord.Sample(
-                time = sessionStartTime.toInstant().plus(10, ChronoUnit.MINUTES),
-                speed = Velocity.metersPerSecond(2.9)
-            )
-        )
-    )
 }
