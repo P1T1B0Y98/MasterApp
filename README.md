@@ -21,18 +21,37 @@ The use of this app and other apps can enhance patient health and help therapist
 5. Early diagnosis and help
 6. Can potentially remove the stigma and challenges regardging these traditional assessment methods
 
+## IDPT 
+The IDPT framework referenced in the introduction facilitates views for creating questionnaires and view the responses to them. Below is a demo showcasing the extension of the IDPT:
 
-## Demo
-[Check out demo here](something)
+
+https://github.com/P1T1B0Y98/MindSync/assets/90247464/4b3b2d2b-bfb4-44ad-8acd-3f291ddef5b0
+
+
+## Demo MindSync
+
+This holds the demo for the MindSync application that facilitates. The first vidoe shows the register and login process in addition to the setup phase and the settings functionalities (NB! Turn on sound)
+
+https://github.com/P1T1B0Y98/MindSync/assets/90247464/2c690a1d-1710-47f8-8a86-d5a16633a9c8
+
+Below shows the answer process and the visualization of results, in addition to stress values we visualize sleep and physical activity as seen in the documentation. 
+
+
+https://github.com/P1T1B0Y98/MindSync/assets/90247464/44473767-9f3c-49a0-9f13-9fb9db89498c
+
 
 ## Getting started
-For future development take a look at the [documentation].
+For future development take a look at the [documentation](https://mindsync.gitbook.io/mindsync/).
 
 ## Features
 
-## Future Work
+- Wearable data integration
 
-## What can it be used for?
+- Digital platform for answering questionnaires
+
+- Delete responses
+
+- Health Connect integration where one can read and write data from other apps. This makes it possible for other apps to reuse our data if we facilitate it.
 
 ## Tags
 
