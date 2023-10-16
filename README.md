@@ -1,5 +1,7 @@
 # Mindsync
 
+![ic_launcher_foreground_dup](https://github.com/P1T1B0Y98/MindSync/assets/90247464/56a32f9f-5096-4ff3-a193-8994dfe37c7b)
+
 ## Introduction
 An mHealth application for answering mental health self-assessment questionnaires with wearable data collection. 
 This application makes use of the open source adaptive IDPT framework found [here](https://github.com/sureshHARDIYA/idpt#components-of-idpt).
