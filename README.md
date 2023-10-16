@@ -41,7 +41,7 @@ https://github.com/P1T1B0Y98/MindSync/assets/90247464/44473767-9f3c-49a0-9f13-9f
 
 
 ## Getting started
-For future development take a look at the [documentation](https://mindsync.gitbook.io/mindsync/).
+For future development and an explanation of the important functions and screens take a look at the [Gitbook repo for MindSync](https://mindsync.gitbook.io/mindsync/).
 
 ## Features
 
